@@ -1,4 +1,4 @@
-#include "imageLoad.h"
+Ôªø#include "imageLoad.h"
 #include "OBJ_Loader.h"
 #include <iostream>
 #include <vector>
@@ -8,37 +8,37 @@
 /*****************************************************************************
 * Autor:				Jan Stejskal
 * ID:					xstejs31 / 211272
-* 
-* N·zev:				x
-* 
-* VypracovanÈ ˙lohy:	Modelov·nÌ objekt˘ - 
+*
+* N√°zev:				x
+*
+* Vypracovan√© √∫lohy:	Modelov√°n√≠ objekt≈Ø -							3b
 *						Animace - CHECK									1b
-*						OsvÏtlenÌ - CHECK								1b
-*						Voln˝ pohyb v horizont·lnÌ rovinÏ - CHECK		1b
+*						Osvƒõtlen√≠ - CHECK								1b
+*						Voln√Ω pohyb v horizont√°ln√≠ rovinƒõ - CHECK		1b
 *						Menu - CHECK									2b
-*						V˝pis textu - 
-*						RuËnÌ svÌtilna - 
-*						Blender model - 
-*						LÈt·nÌ - 
-*						Stoup·nÌ, kles·nÌ - CHECK						1b
-*						Hod p¯edmÏtu - CHECK							2b
+*						V√Ωpis textu -									2b
+*						Ruƒçn√≠ sv√≠tilna - -1000%							2b
+*						Blender model -									2b
+*						L√©t√°n√≠ -										2b
+*						Stoup√°n√≠, kles√°n√≠ - CHECK						1b
+*						Hod p≈ôedmƒõtu - CHECK							2b
 *						Simulace kroku - CHECK							2b
-*						TlaËÌtka - 
-*						Pr˘hlednost - 
-*						ProjekËnÌ paprsek - 
-*						Nepr˘chozÌ objekt - 
-*						Texturov·nÌ - CHECK								2b
-*						BÈzierovy pl·ty - 
-*						
-* OËek·v·n˝ poËet bod˘:	x
-* 
-* Ovl·dacÌ kl·vesy:		w -- pohyb dop¯edu	q -- pohyb nahoru
+*						Tlaƒç√≠tka -										2b
+*						Pr√πhlednost -									1b
+*						Projekƒçn√≠ paprsek -								1b
+*						Nepr≈Øchoz√≠ objekt - CHECK						2b
+*						Texturov√°n√≠ - CHECK								2b
+*						B√©zierovy pl√°ty -								2b
+*
+* O√®ek√°v√°n√Ω po√®et bod√π:	x
+*
+* Ovl√°dac√≠ kl√°vesy:		w -- pohyb dop√∏edu	q -- pohyb nahoru
 *						a -- pohyb doleva	e -- pohyb dolu
-*						s -- pohyb dozadu	f -- svÌtilna
+*						s -- pohyb dozadu	f -- sv√≠tilna
 *						d -- pohyb doprava	t -- hodit objekt
-* 
-* VlastnÌ n·pady:		x
-* 
+*
+* Vlastn√≠ n√°pady:		x
+*
 * Konfigurace:			Windows SDK 10.0.22000.0, Visual studio v143, C++14
 *****************************************************************************/
 
@@ -65,35 +65,35 @@
 
 #define PI 3.14159265359
 #define PIOVER180 0.017453292519943f
- 
+
 struct Player
 {
-	// Pozice ve svÏtÏ
-	float x,y,z;
+	// Pozice ve sv√¨t√¨
+	float x, y, z;
 
-	// Sou¯adnice myöi p¯ed p¯ekreslenÌm
+	// Sou√∏adnice my≈°i p√∏ed p√∏ekreslen√≠m
 	float x_new, y_new;
 
-	// Spo¯adnice myöi po p¯ekreslenÌ
+	// Spo√∏adnice my≈°i po p√∏ekreslen√≠
 	float x_old, y_old;
 
-	// Sou¯adnice myöi p¯ed stisknutÌm kl·vesy
+	// Sou√∏adnice my≈°i p√∏ed stisknut√≠m kl√°vesy
 	float x_temp, y_temp;
 
 	double bob = 0;
 	bool down = true;
 
-	// Doch·zÌ k ot·ËenÌ smÏru kamery?
+	// Doch√°z√≠ k ot√°√®en√≠ sm√¨ru kamery?
 	bool changeViewDir = false;
 
-	// SmÏr pohledu
+	// Sm√¨r pohledu
 	float viewDir;
 
-	// Citlivost myöi
+	// Citlivost my≈°i
 	int sensitivity = 5;
 	int movementSpeed = 2;
 
-	// ovl·d· zapnutÌ/vypnutÌ baterky
+	// ovl√°d√° zapnut√≠/vypnut√≠ baterky
 	bool flashlight = false;
 
 	Player() {}
@@ -107,16 +107,16 @@ struct Player
 
 struct Throwable
 {
-	// Pozice ve svÏtÏ
+	// Pozice ve sv√¨t√¨
 	float x, y, z;
 
-	// SmÏr pohybu
+	// Sm√¨r pohybu
 	float direction;
 
-	// Vzd·lenost 
+	// Vzd√°lenost 
 	int distance = 0;
 
-	// Hozen˝?
+	// Hozen√Ω?
 	bool thrown = false;
 
 	Throwable() {}
@@ -128,9 +128,9 @@ struct Throwable
 	}
 };
 
-struct Planet 
+struct Planet
 {
-	// Pozice ve svÏtÏ
+	// Pozice ve sv√¨t√¨
 	float x, y, z;
 
 	float positionAngle;
@@ -146,15 +146,15 @@ struct Planet
 
 struct Collider
 {
-	int x, y, z, width, height, depth;
+	float x, y, z, width, height, depth;
 
-	Collider(int x, int y, int z, int width, int height, int depth) :
-		x(x), y(y), z(z), width(width + 1), height(height + 1), depth(depth + 1) {}
+	Collider(float x, float y, float z, float width, float height, float depth) :
+		x(x - 1), y(y - 1), z(z - 1), width(width + 2), height(height + 2), depth(depth + 2) {}
 };
 
 // nastaveni projekce
 float fov = 60.0;
-float nearPlane = 0.1;
+float nearPlane = 0.1f;
 float farPlane = 600;
 
 // pozice kamery
@@ -166,35 +166,34 @@ Throwable torus;
 // Sun & Moon
 Planet suon(0, 150, 0);
 
-// ovl·d· onTimer func
+// ovl√°d√° onTimer func
 bool animations = false;
 
-// ovl·d· textury
+// ovl√°d√° textury
 bool textures = true;
 
-// pole pro potvrzenÌ zm·ËknutÈ kl·vesy (w,a,s,d,q,e)
+// pole pro potvrzen√≠ zm√°√®knut√© kl√°vesy (w,a,s,d,q,e)
 bool keyState[6];
 
-// ⁄roveÚ zemÏ
+// √örove√≤ zem√¨
 GLfloat ground = 5;
 
 // Matice modelview
 GLfloat modelViewMatrix[16];
 
-// struct pro detekci kolize
-Collider wall1(123, 15, -127.8, 5, 30, 100);
-Collider wall2(27.8, 15, -128, 100, 30, 5);
+// detekce kolize
+std::vector<Collider>* colliderArr = new std::vector<Collider>();
 
 GLUquadric* quadric = gluNewQuadric();
 
-// glob·lnÌ osvÏtlenÌ
-GLfloat SunAmbient[] = { 2.1, 2.1, 1.8, 1 };
+// glob√°ln√≠ osv√¨tlen√≠
+GLfloat SunAmbient[] = { 2.1f, 2.1f, 1.8f, 1 };
 GLfloat SunDiffuse[] = { 1, 1, 1, 1.0f };
 GLfloat SunSpecular[] = { 1, 1, 1, 1.0f };
 GLfloat SunPosition[] = { 0, 150, 0, 0 };
 GLfloat SunDirection[] = { 0.0f, -1.0f, 0.0f };
 
-GLfloat MoonAmbient[] = { .8, .8, 1, 1 };
+GLfloat MoonAmbient[] = { .8f, .8f, 1, 1 };
 GLfloat MoonDiffuse[] = { 1, 1, 1, 1.0f };
 GLfloat MoonSpecular[] = { 1, 1, 1, 1.0f };
 GLfloat MoonPosition[] = { 0, -150, 0, 0 };
@@ -205,7 +204,7 @@ GLfloat flashlightDiffuse[] = { 1, 1, 1, 1.0f };
 GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
 // Position a Direction vypocitat
 
-// materi·l
+// materi√°l
 GLfloat materialAmbient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 GLfloat materialDiffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat materialSpecular[] = { .0f, .0f, .0f, 1.0f };
@@ -214,16 +213,15 @@ GLfloat materialShininess = 60;
 unsigned char texture[TEXTURE_HEIGHT][TEXTURE_WIDTH][4];
 GLuint textureType[9];
 
-bool colision(int x, int y, int z) 
+bool collision(float x, float y, float z)
 {
-	if ((-x == wall2.x || -x == wall2.x + wall2.width) && 
-		(-z >= wall2.z && -z < wall2.z + wall2.depth) && 
-		(-y+18 >= wall2.y && -y+18 < wall2.y + wall2.height)) return false;
-
-	if ((-z == wall2.z || -z == wall2.z + wall2.depth) && 
-		(-x > wall2.x && -x < wall2.x + wall2.width) && 
-		(-y+18 >= wall2.y && -y+18 < wall2.y + wall2.height)) return false;
-	
+	for (size_t i = 0; i < colliderArr->size(); i++)
+	{
+		if ((-x >= colliderArr->at(i).x && -x < colliderArr->at(i).x + colliderArr->at(i).width) &&
+			(-z >= colliderArr->at(i).z && -z < colliderArr->at(i).z + colliderArr->at(i).depth) &&
+			(-y + 17 >= colliderArr->at(i).y && -y + 17 < colliderArr->at(i).y + colliderArr->at(i).height))
+			return false;
+	}
 	return true;
 }
 
@@ -265,7 +263,7 @@ void menu(int value)
 	case MENU_RESET:
 		cam(0, 0, -100);
 		break;
-		
+
 	case MENU_EXIT:
 		exit(1);
 		break;
@@ -280,7 +278,7 @@ void menu(int value)
 		break;
 
 	case MENU_TIMER_RESET:
-		// reset animacÌ
+		// reset animac√≠
 		break;
 
 	case MENU_TEXTURES_ON:
@@ -413,7 +411,7 @@ void onKeyDown(unsigned char key, int mx, int my)
 	glutPostRedisplay();
 }
 
-void onKeyUp(unsigned char key, int mx, int my) 
+void onKeyUp(unsigned char key, int mx, int my)
 {
 	if (key < 'a') key += 32;
 
@@ -447,50 +445,76 @@ void onKeyUp(unsigned char key, int mx, int my)
 	glutPostRedisplay();
 }
 
-void movement() 
+void movement()
 {
-	float tempx, tempz;
-	
+	float tempx, tempy, tempz;
+
 	if (keyState[0])	// w
 	{
 		tempx = .1f / cam.movementSpeed * sin(cam.viewDir);
 		tempz = .1f / cam.movementSpeed * cos(cam.viewDir);
-		
-		if (colision(cam.x +tempx, cam.y, cam.z + tempz))
+
+		if (collision(cam.x - tempx, cam.y, cam.z + tempz))
 		{
-		cam.x -= tempx;
-		cam.z += tempz;
+			cam.x -= tempx;
+			cam.z += tempz;
 		}
 	}
 	if (keyState[1])	// a
 	{
-		cam.x += .1f / cam.movementSpeed * cos(cam.viewDir);
-		cam.z += .1f / cam.movementSpeed * sin(cam.viewDir);	
+		tempx = .1f / cam.movementSpeed * cos(cam.viewDir);
+		tempz = .1f / cam.movementSpeed * sin(cam.viewDir);
+
+		if (collision(cam.x + tempx, cam.y, cam.z + tempz))
+		{
+			cam.x += tempx;
+			cam.z += tempz;
+		}
 	}
 	if (keyState[2])	// s
 	{
-		cam.x += .1f / cam.movementSpeed * sin(cam.viewDir);
-		cam.z -= .1f / cam.movementSpeed * cos(cam.viewDir);	
+		tempx = .1f / cam.movementSpeed * sin(cam.viewDir);
+		tempz = .1f / cam.movementSpeed * cos(cam.viewDir);
+
+		if (collision(cam.x + tempx, cam.y, cam.z - tempz))
+		{
+			cam.x += tempx;
+			cam.z -= tempz;
+		}
 	}
 	if (keyState[3])	// d
 	{
-		cam.x -= .1f / cam.movementSpeed * cos(cam.viewDir);
-		cam.z -= .1f / cam.movementSpeed * sin(cam.viewDir);
+		tempx = .1f / cam.movementSpeed * cos(cam.viewDir);
+		tempz = .1f / cam.movementSpeed * sin(cam.viewDir);
+
+		if (collision(cam.x - tempx, cam.y, cam.z - tempz))
+		{
+			cam.x -= tempx;
+			cam.z -= tempz;
+		}
 	}
 	if (keyState[4])	// q
 	{
-		cam.y -= .1f / cam.movementSpeed;
+		tempy = .1f / cam.movementSpeed;
+		if (collision(cam.x, cam.y - tempy, cam.z))
+		{
+			cam.y -= tempy;
+		}
 	}
 	if (keyState[5])	// e
 	{
-		cam.y += cam.y < 0 ? .1f / cam.movementSpeed : 0;
+		tempy = .1f / cam.movementSpeed;
+		if (collision(cam.x, cam.y + tempy, cam.z))
+		{
+			cam.y += cam.y + tempy < 0 ? tempy : 0;
+		}
 	}
 
 	if (keyState[0] || keyState[1] || keyState[2] || keyState[3] || cam.bob > 0)
 	{
 		if (cam.down)
 		{
-			float temp = cam.bob;
+			double temp = cam.bob;
 			cam.bob += PI / BOBSPEED;
 			cam.y += sin(cam.bob) - sin(temp);
 			if (cam.bob >= PI) cam.down = false;
@@ -534,20 +558,20 @@ void onMotion(int x, int y)
 	if (cam.changeViewDir)
 	{
 		cam.x_new = cam.x_old + (x - cam.x_temp) / (8 - cam.sensitivity);		// x-x_temp = x-xx
-		cam.y_new = -(cam.y_old + (y - cam.y_temp) / (8 - cam.sensitivity));	// ËÌm vyööÌ ËÌslo, tÌm menöÌ p¯Ìr˘stky
+		cam.y_new = -(cam.y_old + (y - cam.y_temp) / (8 - cam.sensitivity));	// √®√≠m vy≈°≈°√≠ √®√≠slo, t√≠m men≈°√≠ p√∏√≠r√πstky
 		cam.viewDir = cam.x_new * PIOVER180;
 		glutPostRedisplay();
 	}
 }
 
-// Generuje n·hodnou texturu
+// Generuje n√°hodnou texturu
 void initTexture()
 {
 	srand((unsigned int)std::time(0));
 	for (int j = 0; j < TEXTURE_HEIGHT; j++)
 	{
 		unsigned char* pix = texture[j][0];
-		for(int i = 0; i < TEXTURE_WIDTH; i++) 
+		for (int i = 0; i < TEXTURE_WIDTH; i++)
 		{
 			*pix++ = 0;
 			*pix++ = 50 + (rand() % 156);
@@ -560,16 +584,16 @@ void initTexture()
 void init()
 {
 	glFrontFace(GL_CW);					// clockwise fronta
-	glPolygonMode(GL_FRONT, GL_FILL);	// fill p¯ednÌ stranu
-	glCullFace(GL_BACK);				// nerendruj zadnÌ stranu
+	glPolygonMode(GL_FRONT, GL_FILL);	// fill p√∏edn√≠ stranu
+	glCullFace(GL_BACK);				// nerendruj zadn√≠ stranu
 	glEnable(GL_CULL_FACE);
 
-	glEnable(GL_LIGHTING);				// osvÏtlenÌ
+	glEnable(GL_LIGHTING);				// osv√¨tlen√≠
 	glEnable(GL_NORMALIZE);
 
 	glShadeModel(GL_SMOOTH);
 
-	// NastavenÌ materi·l˘
+	// Nastaven√≠ materi√°l√π
 	glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, materialAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
@@ -584,7 +608,7 @@ void init()
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, SunDirection);
 	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 90);
 
-	// MÏsÌc
+	// M√¨s√≠c
 	glEnable(GL_LIGHT1);				// zdroj 2
 	glLightfv(GL_LIGHT1, GL_AMBIENT, MoonAmbient);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, MoonDiffuse);
@@ -605,9 +629,9 @@ void init()
 	gluQuadricNormals(quadric, GLU_SMOOTH);
 	gluQuadricTexture(quadric, GLU_TRUE);
 
-	// !!P¯idat textury!!
+	// !!P√∏idat textury!!
 
-	// Dynamicky vygenerovan· textura
+	// Dynamicky vygenerovan√° textura
 	initTexture();
 	glGenTextures(1, &textureType[0]);
 	glBindTexture(GL_TEXTURE_2D, textureType[0]);
@@ -617,11 +641,11 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	// Vytvo¯enÌ textury a uloûenÌ do VRAM
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, 
+	// Vytvo√∏en√≠ textury a ulo≈æen√≠ do VRAM
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH,
 		TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
 
-	// NaËten· textura
+	// Na√®ten√° textura
 	setTexture("textury/zed/wall_1024_ivy_05.tga", &textureType[1], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[1]);
 
@@ -631,8 +655,14 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	
+
 	glEnable(GL_TEXTURE_2D);
+
+	//zed 1
+	colliderArr->push_back(Collider(123, 15, -127.8, 5, 30, 100));
+	//zed 2
+	colliderArr->push_back(Collider(27.8, 15, -128, 100, 30, 5));
+
 }
 
 void drawGround(GLfloat x, GLfloat z)
@@ -640,10 +670,10 @@ void drawGround(GLfloat x, GLfloat z)
 	glPushMatrix();
 
 	glTranslatef(0, -15, 0);
-	
-	// V˝bÏr textury pro aplikaci
-	// Pokud jsou vypnut˝ textury, aplikuj zelenou
-	if (textures) 
+
+	// V√Ωb√¨r textury pro aplikaci
+	// Pokud jsou vypnut√Ω textury, aplikuj zelenou
+	if (textures)
 	{
 		glColor3f(1, 1, 1);
 		glBindTexture(GL_TEXTURE_2D, textureType[0]);
@@ -657,11 +687,11 @@ void drawGround(GLfloat x, GLfloat z)
 
 	glBegin(GL_QUADS);
 	{
-		// Pozice v textu¯e + vertex
-		glTexCoord2f(1.0, 1.0); glVertex3f(x/2, 0, z/2);
-		glTexCoord2f(0.0, 1.0); glVertex3f(-x/2, 0, z/2);
-		glTexCoord2f(0.0, 0.0); glVertex3f(-x/2, 0, -z/2);
-		glTexCoord2f(1.0, 0.0); glVertex3f(x/2, 0, -z/2);
+		// Pozice v textu√∏e + vertex
+		glTexCoord2f(1.0, 1.0); glVertex3f(x / 2, 0, z / 2);
+		glTexCoord2f(0.0, 1.0); glVertex3f(-x / 2, 0, z / 2);
+		glTexCoord2f(0.0, 0.0); glVertex3f(-x / 2, 0, -z / 2);
+		glTexCoord2f(1.0, 0.0); glVertex3f(x / 2, 0, -z / 2);
 	}
 	glEnd();
 
@@ -673,7 +703,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 {
 	glPushMatrix();
 
-	if (textures) 
+	if (textures)
 	{
 		glColor3f(1, 1, 1);
 		glBindTexture(GL_TEXTURE_2D, textureType[1]);
@@ -687,7 +717,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	glTranslatef(x, y, z);
 
-	// P¯ednÌ stÏna
+	// P√∏edn√≠ st√¨na
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, 0);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, 0);
@@ -695,7 +725,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, 0);
 	glEnd();
 
-	// ZadnÌ stÏna
+	// Zadn√≠ st√¨na
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, depth);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, depth);
@@ -703,7 +733,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, depth);
 	glEnd();
 
-	// Lev· stÏna
+	// Lev√° st√¨na
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, depth);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, depth);
@@ -711,7 +741,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(0.0, 1.0); glVertex3f(0, 0, 0);
 	glEnd();
 
-	// Prav· stÏna
+	// Prav√° st√¨na
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, 0);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, 0);
@@ -719,19 +749,19 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(1.0, 1.0); glVertex3f(width, 0, depth);
 	glEnd();
 
-	// Vröek
+	// Vr≈°ek
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 1.0); glVertex3f(width, 0, 0);
-	glTexCoord2f(1.0, 0.9); glVertex3f(width, 0, depth);
-	glTexCoord2f(0.9, 0.9); glVertex3f(0, 0, depth);
-	glTexCoord2f(0.9, 1.0); glVertex3f(0, 0, 0);
+	glTexCoord2f(1.0, 0.9f); glVertex3f(width, 0, depth);
+	glTexCoord2f(0.9f, 0.9f); glVertex3f(0, 0, depth);
+	glTexCoord2f(0.9f, 1.0); glVertex3f(0, 0, 0);
 	glEnd();
 
 	// Spodek
 	glBegin(GL_QUADS);
-	glTexCoord2f(0.1, 0.0); glVertex3f(0, -height, 0);
-	glTexCoord2f(0.1, 0.1); glVertex3f(0, -height, depth);
-	glTexCoord2f(0.0, 0.1); glVertex3f(width, -height, depth);
+	glTexCoord2f(0.1f, 0.0); glVertex3f(0, -height, 0);
+	glTexCoord2f(0.1f, 0.1f); glVertex3f(0, -height, depth);
+	glTexCoord2f(0.0, 0.1f); glVertex3f(width, -height, depth);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, 0);
 	glEnd();
 
@@ -747,7 +777,7 @@ void drawWindow(GLfloat x, GLfloat y, GLfloat z)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Pruhledn· stÏna
+	// Pruhledn√° st√¨na
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_TEXTURE_2D);
@@ -784,7 +814,7 @@ void daycycle()
 
 	if (textures) glDisable(GL_TEXTURE_2D);
 	glPushMatrix();
-	
+
 	/*int texture;
 	glGetIntegerv(GL_TEXTURE_2D, &texture);
 	glBindTexture(GL_TEXTURE_2D, textureType[1]);
@@ -794,7 +824,7 @@ void daycycle()
 	glTranslatef(suon.x, suon.y, suon.z);
 	glColor3f(1.0, 1.0, 0.0);
 	gluSphere(quadric, 10.0, 20, 50);
-	
+
 	/*glBindTexture(GL_TEXTURE_2D, textureType[texture]);
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);*/
 
@@ -802,7 +832,7 @@ void daycycle()
 	glPushMatrix();
 
 
-	// MÏsÌc
+	// M√¨s√≠c
 	glTranslatef(-suon.x, -suon.y, -suon.z);
 	glColor3f(1.0, 1.0, 1.0);
 	gluSphere(quadric, 5.0, 20, 25);
@@ -834,55 +864,55 @@ void flashlight()
 {
 	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
 
-	GLfloat dir[] = {modelViewMatrix[2], modelViewMatrix[6], modelViewMatrix[10]};
-	GLfloat pos[] = {cam.x, cam.y, cam.z};
+	GLfloat dir[] = { modelViewMatrix[2], modelViewMatrix[6], modelViewMatrix[10] };
+	GLfloat pos[] = { cam.x, cam.y, cam.z };
 
 	// Pozice
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
-	// SmÏr
+	// Sm√¨r
 	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, dir);
 }
 
 void onRedraw()
 {
-	// Parametry pro maz·nÌ roviny
+	// Parametry pro maz√°n√≠ roviny
 	glClearColor(.8, .8, .8, 0.0);
 	glClearDepth(1);
 
-	// maz·nÌ roviny
+	// maz√°n√≠ roviny
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	
+
 	// inicializace MODELVIEW
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	// provedenÌ transformace sceny (rotace/pohyb)
+	// proveden√≠ transformace sceny (rotace/pohyb)
 	glRotatef(cam.y_new, 1, 0, 0);
 	glRotatef(cam.x_new, 0, 1, 0);
 	glTranslatef(cam.x, cam.y, cam.z);
 
-	// !!VLASTNÕ!!
-	drawGround(TEXTURE_HEIGHT/2, TEXTURE_WIDTH/2);
-	
+	// !!VLASTN√ç!!
+	drawGround(TEXTURE_HEIGHT / 2, TEXTURE_WIDTH / 2);
+
 	drawWall(123, 15, -127.8, 5, 30, 100);
 	drawWall(27.8, 15, -128, 100, 30, 5);
-	// Pr˘hlednÈ okno
+	// Pr√πhledn√© okno
 	//drawWindow(5, 5, 5);
 
-	// hod konvicÌ
+	// hod konvic√≠
 	if (torus.thrown)
 	{
-		if (torus.distance++ < farPlane*8) throwTorus();
+		if (torus.distance++ < farPlane * 8) throwTorus();
 		else torus.thrown = false;
 	}
 	if (cam.flashlight) flashlight();
-	
-	// Slunce a mÏöÌc
+
+	// Slunce a m√¨≈°√≠c
 	daycycle();
 
-	// Obstar·v· pohyb
+	// Obstar√°v√° pohyb
 	movement();
 
 	glFlush();
@@ -914,5 +944,6 @@ int main(int argc, char* argv[])
 
 
 	gluDeleteQuadric(quadric);
+	delete colliderArr;
 	return 0;
 }
