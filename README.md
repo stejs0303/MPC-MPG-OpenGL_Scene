@@ -9,7 +9,7 @@ OpenGL, GLU, GLUT, pain&amp;suffering
 *	2b  Menu - CHECK
 *	2b  Výpis textu -
 *	2b  Ruční svítilna - -1000%
-*	2b  Blender model -
+*	2b  Blender model - 50% hotovy
 *	2b  Létání -
 *	1b  Stoupání, klesání - CHECK
 *	2b  Hod předmětu - CHECK
