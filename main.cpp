@@ -68,25 +68,19 @@
 
 struct Player
 {
-	// Pozice ve svìtì
+	// Pozice ve světě
 	float x, y, z;
 
-	// Souøadnice myši pøed pøekreslením
 	float x_new, y_new;
-
-	// Spoøadnice myši po pøekreslení
 	float x_old, y_old;
-
-	// Souøadnice myši pøed stisknutím klávesy
 	float x_temp, y_temp;
 
 	double bob = 0;
 	bool down = true;
 
-	// Dochází k otáèení smìru kamery?
+	// Dochází k otáčení kamery?
 	bool changeViewDir = false;
 
-	// Smìr pohledu
 	float viewDir;
 
 	// Citlivost myši
@@ -107,10 +101,10 @@ struct Player
 
 struct Throwable
 {
-	// Pozice ve svìtì
+	// Pozice ve světě
 	float x, y, z;
 
-	// Smìr pohybu
+	// Směr pohybu
 	float direction;
 
 	// Vzdálenost 
@@ -130,7 +124,7 @@ struct Throwable
 
 struct Planet
 {
-	// Pozice ve svìtì
+	// Pozice ve světě
 	float x, y, z;
 
 	float positionAngle;
@@ -148,6 +142,7 @@ struct Collider
 {
 	float x, y, z, width, height, depth;
 
+	// -1 a +2, aby se nešlo koukat zkrz texturu
 	Collider(float x, float y, float z, float width, float height, float depth) :
 		x(x - 1), y(y - 1), z(z - 1), width(width + 2), height(height + 2), depth(depth + 2) {}
 };
@@ -175,9 +170,6 @@ bool textures = true;
 // pole pro potvrzení zmáèknuté klávesy (w,a,s,d,q,e)
 bool keyState[6];
 
-// Úroveò zemì
-GLfloat ground = 5;
-
 // Matice modelview
 GLfloat modelViewMatrix[16];
 
@@ -186,7 +178,7 @@ std::vector<Collider>* colliderArr = new std::vector<Collider>();
 
 GLUquadric* quadric = gluNewQuadric();
 
-// globální osvìtlení
+// globální osvětlení
 GLfloat SunAmbient[] = { 2.1f, 2.1f, 1.8f, 1 };
 GLfloat SunDiffuse[] = { 1, 1, 1, 1.0f };
 GLfloat SunSpecular[] = { 1, 1, 1, 1.0f };
@@ -278,7 +270,7 @@ void menu(int value)
 		break;
 
 	case MENU_TIMER_RESET:
-		// reset animací
+		// TODO: reset animací
 		break;
 
 	case MENU_TEXTURES_ON:
@@ -558,7 +550,7 @@ void onMotion(int x, int y)
 	if (cam.changeViewDir)
 	{
 		cam.x_new = cam.x_old + (x - cam.x_temp) / (8 - cam.sensitivity);		// x-x_temp = x-xx
-		cam.y_new = -(cam.y_old + (y - cam.y_temp) / (8 - cam.sensitivity));	// èím vyšší èíslo, tím menší pøírùstky
+		cam.y_new = -(cam.y_old + (y - cam.y_temp) / (8 - cam.sensitivity));	// čím vyšší číslo, tím menší přírůstky
 		cam.viewDir = cam.x_new * PIOVER180;
 		glutPostRedisplay();
 	}
@@ -584,11 +576,11 @@ void initTexture()
 void init()
 {
 	glFrontFace(GL_CW);					// clockwise fronta
-	glPolygonMode(GL_FRONT, GL_FILL);	// fill pøední stranu
+	glPolygonMode(GL_FRONT, GL_FILL);	// fill přední stranu
 	glCullFace(GL_BACK);				// nerendruj zadní stranu
 	glEnable(GL_CULL_FACE);
 
-	glEnable(GL_LIGHTING);				// osvìtlení
+	glEnable(GL_LIGHTING);				// osvětlení
 	glEnable(GL_NORMALIZE);
 
 	glShadeModel(GL_SMOOTH);
@@ -629,7 +621,7 @@ void init()
 	gluQuadricNormals(quadric, GLU_SMOOTH);
 	gluQuadricTexture(quadric, GLU_TRUE);
 
-	// !!Pøidat textury!!
+	// !!Přidat textury!!
 
 	// Dynamicky vygenerovaná textura
 	initTexture();
@@ -641,11 +633,11 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	// Vytvoøení textury a uložení do VRAM
+	// Vytvoření textury a uložení do VRAM
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH,
 		TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
 
-	// Naètená textura
+	// Načtená textura
 	setTexture("textury/zed/wall_1024_ivy_05.tga", &textureType[1], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[1]);
 
@@ -671,7 +663,7 @@ void drawGround(GLfloat x, GLfloat z)
 
 	glTranslatef(0, -15, 0);
 
-	// Výbìr textury pro aplikaci
+	// Výběr textury pro aplikaci
 	// Pokud jsou vypnutý textury, aplikuj zelenou
 	if (textures)
 	{
@@ -717,7 +709,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	glTranslatef(x, y, z);
 
-	// Pøední stìna
+	// Přední stěna
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, 0);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, 0);
@@ -725,7 +717,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, 0);
 	glEnd();
 
-	// Zadní stìna
+	// Zadní stěna
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, depth);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, depth);
@@ -733,7 +725,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, depth);
 	glEnd();
 
-	// Levá stìna
+	// Levá stěna
 	glBegin(GL_QUADS);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, depth);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, depth);
@@ -741,7 +733,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glTexCoord2f(0.0, 1.0); glVertex3f(0, 0, 0);
 	glEnd();
 
-	// Pravá stìna
+	// Pravá stěna
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, 0);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, 0);
@@ -777,7 +769,7 @@ void drawWindow(GLfloat x, GLfloat y, GLfloat z)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Pruhledná stìna
+	// Pruhledná stěna
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_TEXTURE_2D);
@@ -869,7 +861,7 @@ void flashlight()
 
 	// Pozice
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
-	// Smìr
+	// Směr
 	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, dir);
 }
 
