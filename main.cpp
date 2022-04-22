@@ -18,21 +18,21 @@
 *						Menu - CHECK									2b
 *						Výpis textu -									2b
 *						Ruční svítilna - -1000%							2b
-*						Blender model -									2b
+*						Blender model -	50%								2b
 *						Létání -										2b
 *						Stoupání, klesání - CHECK						1b
 *						Hod předmětu - CHECK							2b
 *						Simulace kroku - CHECK							2b
 *						Tlačítka -										2b
-*						Prùhlednost -									1b
+*						Průhlednost -									1b
 *						Projekční paprsek -								1b
 *						Neprůchozí objekt - CHECK						2b
 *						Texturování - CHECK								2b
 *						Bézierovy pláty -								2b
 *
-* Oèekáváný poèet bodù:	x
+* Očekáváný počet bodù:	x
 *
-* Ovládací klávesy:		w -- pohyb dopøedu	q -- pohyb nahoru
+* Ovládací klávesy:		w -- pohyb dopředu	q -- pohyb nahoru
 *						a -- pohyb doleva	e -- pohyb dolu
 *						s -- pohyb dozadu	f -- svítilna
 *						d -- pohyb doprava	t -- hodit objekt
@@ -61,7 +61,7 @@
 #define TEXTURE_HEIGHT 512
 #define TEXTURE_WIDTH 512
 
-#define BOBSPEED 300
+#define BOBSPEED 250
 
 #define PI 3.14159265359
 #define PIOVER180 0.017453292519943f
@@ -109,6 +109,8 @@ struct Throwable
 
 	// Vzdálenost 
 	int distance = 0;
+
+	int rotation = 0;
 
 	// Hozený?
 	bool thrown = false;
@@ -177,6 +179,10 @@ GLfloat modelViewMatrix[16];
 std::vector<Collider>* colliderArr = new std::vector<Collider>();
 
 GLUquadric* quadric = gluNewQuadric();
+
+// Načítání blender renderů
+bool loadedSign = false;
+objl::Loader sign;
 
 // globální osvětlení
 GLfloat SunAmbient[] = { 2.1f, 2.1f, 1.8f, 1 };
@@ -502,20 +508,20 @@ void movement()
 		}
 	}
 
-	if (keyState[0] || keyState[1] || keyState[2] || keyState[3] || cam.bob > 0)
+	if ((keyState[0] || keyState[1] || keyState[2] || keyState[3] || cam.bob > 0) && cam.y > -1.0f)
 	{
 		if (cam.down)
 		{
 			double temp = cam.bob;
 			cam.bob += PI / BOBSPEED;
-			cam.y += sin(cam.bob) - sin(temp);
+			cam.y += 0.5f * (sin(cam.bob) - sin(temp));
 			if (cam.bob >= PI) cam.down = false;
 		}
 		else
 		{
 			double temp = cam.bob;
 			cam.bob -= PI / BOBSPEED;
-			cam.y += sin(temp) - sin(cam.bob);
+			cam.y += 0.5f * (sin(temp) - sin(cam.bob));
 			if (cam.bob <= 0) cam.down = true;
 		}
 	}
@@ -556,17 +562,17 @@ void onMotion(int x, int y)
 	}
 }
 
-// Generuje náhodnou texturu
 void initTexture()
 {
+	// Generuje náhodnou texturu "trávy"
 	srand((unsigned int)std::time(0));
 	for (int j = 0; j < TEXTURE_HEIGHT; j++)
 	{
 		unsigned char* pix = texture[j][0];
 		for (int i = 0; i < TEXTURE_WIDTH; i++)
 		{
-			*pix++ = 0;
-			*pix++ = 50 + (rand() % 156);
+			*pix++ = 40;
+			*pix++ = 50 + (rand() % 126);
 			*pix++ = 0;
 			*pix++ = 255;
 		}
@@ -621,6 +627,9 @@ void init()
 	gluQuadricNormals(quadric, GLU_SMOOTH);
 	gluQuadricTexture(quadric, GLU_TRUE);
 
+
+	loadedSign = sign.LoadFile("obj/cedule.obj");
+	
 	// !!Přidat textury!!
 
 	// Dynamicky vygenerovaná textura
@@ -794,6 +803,53 @@ void drawWindow(GLfloat x, GLfloat y, GLfloat z)
 	glPopMatrix();
 }
 
+void drawObjSign()
+{
+	glPushMatrix();
+
+	GLboolean cullface;
+	GLboolean lighting;
+	glGetBooleanv(GL_CULL_FACE, &cullface);
+	glGetBooleanv(GL_LIGHTING, &lighting);
+
+	if (cullface) glDisable(GL_CULL_FACE);
+	if (lighting) glDisable(GL_LIGHTING);
+	if (textures) glDisable(GL_TEXTURE_2D);
+
+	glTranslatef(0, -1, 0);
+	glRotatef(90, 0, 1, 0);
+
+	for (size_t i = 0; i < sign.LoadedMeshes.size(); i++)
+	{
+		objl::Mesh mesh = sign.LoadedMeshes[i];
+
+		glBegin(GL_QUADS);
+		for (size_t j = 0; j < mesh.Vertices.size(); j++)
+		{
+			if (mesh.MeshName == "Krychle.002") glColor3b(130, 160, 120);
+			else glColor3b(54, 24, 17);
+			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
+			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
+		}
+		glEnd();
+
+		glBegin(GL_LINE_STRIP);
+		for (size_t j = 0; j < mesh.Vertices.size(); j++)
+		{
+			glColor3b(0, 0, 0);
+			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
+			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
+		}
+		glEnd();
+	}
+
+	if (textures) glEnable(GL_TEXTURE_2D);
+	if (lighting) glEnable(GL_LIGHTING);
+	if (cullface) glEnable(GL_CULL_FACE);
+
+	glPopMatrix();
+}
+
 void daycycle()
 {
 	glPushMatrix();
@@ -834,7 +890,7 @@ void daycycle()
 	glPopMatrix();
 }
 
-void throwTorus()
+bool throwTorus()
 {
 	GLboolean isLighting;
 	glGetBooleanv(GL_LIGHTING, &isLighting);
@@ -842,14 +898,16 @@ void throwTorus()
 
 	glPushMatrix();
 
-	glColor3f(0, 1, 0);
+	glColor3f(.2f, .7f, .1f);
 	glTranslatef(torus.x, 0, torus.z);
+	glRotatef(torus.rotation++, 0, 1, 1);
 	glutSolidTorus(1, 2, 8, 20);
 	glutPostRedisplay();
 
 	glPopMatrix();
 
 	if (isLighting) glEnable(GL_LIGHTING);
+	return true;
 }
 
 void flashlight()
@@ -890,15 +948,16 @@ void onRedraw()
 
 	drawWall(123, 15, -127.8, 5, 30, 100);
 	drawWall(27.8, 15, -128, 100, 30, 5);
-	// Prùhledné okno
+	
+	// Průhledné okno
 	//drawWindow(5, 5, 5);
+	
+	if (loadedSign) drawObjSign();
 
-	// hod konvicí
-	if (torus.thrown)
-	{
-		if (torus.distance++ < farPlane * 8) throwTorus();
-		else torus.thrown = false;
-	}
+	// hod torusem
+	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
+	
+	// baterka
 	if (cam.flashlight) flashlight();
 
 	// Slunce a mìšíc
