@@ -585,7 +585,7 @@ void init()
 
 	glShadeModel(GL_SMOOTH);
 
-	// Nastavení materiálù
+	// Nastavení materiálů
 	glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, materialAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
