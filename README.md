@@ -1,7 +1,7 @@
 # MPC_MPG_211272
 OpenGL, GLU, GLUT, pain&amp;suffering
 
-* Vypracované úlohy:	
+# Vypracované úlohy:	
 * 3b  Modelování objektù -
 *	1b  Animace - CHECK
 *	1b  Osvětlení - CHECK
