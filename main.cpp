@@ -715,7 +715,7 @@ void init()
 		TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
 
 	// Načtená textura
-	setTexture("textury/zed/wall_1024_ivy_05.tga", &textureType[1], false);
+	setTexture("textury/wall_1024_ivy_05.tga", &textureType[1], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[1]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
