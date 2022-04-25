@@ -8,7 +8,7 @@ OpenGL, GLU, GLUT, pain&amp;suffering
 *	1b  Volný pohyb v horizontální rovině - CHECK
 *	2b  Menu - CHECK
 *	2b  Výpis textu - 
-*	2b  Ruční svítilna - -1000%
+*	2b  Ruční svítilna - špatně
 *	2b  Blender model - CHECK
 *	2b  Létání - CHECK 
 *	1b  Stoupání, klesání - CHECK
