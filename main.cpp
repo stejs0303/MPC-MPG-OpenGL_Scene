@@ -20,7 +20,7 @@
 *						Výpis textu -									2b
 *						Ruční svítilna - -1000%							2b
 *						Blender model -	50%								2b
-*						Létání -										2b
+*						Létání - CHECK									2b
 *						Stoupání, klesání - CHECK						1b
 *						Hod předmětu - CHECK							2b
 *						Simulace kroku - CHECK							2b
@@ -62,6 +62,9 @@
 #define TEXTURE_HEIGHT 512
 #define TEXTURE_WIDTH 512
 
+#define FLYMODE_ON 1301
+#define FLYMODE_OFF 1302
+
 #define BOBSPEED 270
 
 #define PI 3.14159265359
@@ -82,7 +85,8 @@ struct Player
 	// Dochází k otáčení kamery?
 	bool changeViewDir = false;
 
-	float viewDir;
+	float viewDirXZ;
+	float viewDirXY;
 
 	// Citlivost myši
 	int sensitivity = 5;
@@ -166,6 +170,9 @@ Planet suon(0, 150, 0);
 
 // ovládá onTimer func
 bool animations = false;
+
+// ovládá létání
+bool flymode = false;
 
 // ovládá textury
 bool textures = true;
@@ -314,6 +321,14 @@ void menu(int value)
 	case MENU_MOVEMENT_SPEED4:
 		cam.movementSpeed = 4;
 		break;
+	
+	case FLYMODE_ON:
+		flymode = true;
+		break;
+	
+	case FLYMODE_OFF:
+		flymode = false;
+		break;
 	}
 	glutPostRedisplay();
 }
@@ -339,12 +354,17 @@ inline void createMenu(void(*func)(int value))
 	glutAddMenuEntry("Stredni", MENU_MOVEMENT_SPEED2);
 	glutAddMenuEntry("Nizka", MENU_MOVEMENT_SPEED4);
 
+	int idFlying = glutCreateMenu(func);
+	glutAddMenuEntry("Zapnout", FLYMODE_ON);
+	glutAddMenuEntry("Vypnout", FLYMODE_OFF);
+
 	glutCreateMenu(func);
 	glutPostRedisplay();
 	glutAddSubMenu("Animace", idTimer);
 	glutAddMenuEntry("Reset pozice ", MENU_RESET);
 	glutAddSubMenu("Citlivost mysi", idSensitivity);
 	glutAddSubMenu("Rychlost pohybu", idMovement);
+	glutAddSubMenu("Létání", idFlying);
 	glutAddSubMenu("Textury", idTextures);
 	glutAddMenuEntry("Konec", MENU_EXIT);
 	glutPostRedisplay();
@@ -397,7 +417,7 @@ void onKeyDown(unsigned char key, int mx, int my)
 		break;
 
 	case 't':
-		torus(-1 * cam.x, -1 * cam.y, -1 * cam.z, cam.viewDir);
+		torus(-1 * cam.x, -1 * cam.y, -1 * cam.z, cam.viewDirXZ);
 		torus.distance = 0;
 		torus.thrown = true;
 		glutTimerFunc(15, onTimer, 1);
@@ -451,19 +471,21 @@ void movement()
 
 	if (keyState[0])	// w
 	{
-		tempx = .1f / cam.movementSpeed * sin(cam.viewDir);
-		tempz = .1f / cam.movementSpeed * cos(cam.viewDir);
+		tempx = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempy = flymode ? .1f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
+		tempz = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
 
-		if (collision(cam.x - tempx, cam.y, cam.z + tempz))
+		if (collision(cam.x - tempx, cam.y + tempy, cam.z + tempz))
 		{
 			cam.x -= tempx;
+			cam.y += tempy;
 			cam.z += tempz;
 		}
 	}
 	if (keyState[1])	// a
 	{
-		tempx = .1f / cam.movementSpeed * cos(cam.viewDir);
-		tempz = .1f / cam.movementSpeed * sin(cam.viewDir);
+		tempx = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempz = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
 
 		if (collision(cam.x + tempx, cam.y, cam.z + tempz))
 		{
@@ -473,19 +495,22 @@ void movement()
 	}
 	if (keyState[2])	// s
 	{
-		tempx = .1f / cam.movementSpeed * sin(cam.viewDir);
-		tempz = .1f / cam.movementSpeed * cos(cam.viewDir);
+		tempx = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempy = flymode ? .1f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
+		tempz = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
 
-		if (collision(cam.x + tempx, cam.y, cam.z - tempz))
+
+		if (collision(cam.x + tempx, cam.y - tempy, cam.z - tempz))
 		{
 			cam.x += tempx;
+			cam.y -= tempy;
 			cam.z -= tempz;
 		}
 	}
 	if (keyState[3])	// d
 	{
-		tempx = .1f / cam.movementSpeed * cos(cam.viewDir);
-		tempz = .1f / cam.movementSpeed * sin(cam.viewDir);
+		tempx = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempz = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
 
 		if (collision(cam.x - tempx, cam.y, cam.z - tempz))
 		{
@@ -559,7 +584,8 @@ void onMotion(int x, int y)
 	{
 		cam.x_new = cam.x_old + (x - cam.x_temp) / (8 - cam.sensitivity);		// x-x_temp = x-xx
 		cam.y_new = -(cam.y_old + (y - cam.y_temp) / (8 - cam.sensitivity));	// čím vyšší číslo, tím menší přírůstky
-		cam.viewDir = cam.x_new * PIOVER180;
+		cam.viewDirXZ = cam.x_new * PIOVER180;
+		cam.viewDirXY = cam.y_new * PIOVER180;
 		glutPostRedisplay();
 	}
 }
