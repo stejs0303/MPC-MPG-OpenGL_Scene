@@ -177,11 +177,21 @@ bool flymode = false;
 // ovládá textury
 bool textures = true;
 
-// pole pro potvrzení zmáèknuté klávesy (w,a,s,d,q,e)
-bool keyState[6];
+unsigned char texture[TEXTURE_HEIGHT][TEXTURE_WIDTH][4];
 
-// Matice modelview
-GLfloat modelViewMatrix[16];
+enum Textures
+{
+	ground = 0,
+	wall = 1,
+	wood = 2,
+	sun = 3,
+	moon = 4
+};
+
+GLuint textureType[9];
+
+// pole pro potvrzení zmáčknuté klávesy (w,a,s,d,q,e)
+bool keyState[6];
 
 // detekce kolize
 std::vector<Collider>* colliderArr = new std::vector<Collider>();
@@ -191,8 +201,11 @@ GLUquadric* quadric = gluNewQuadric();
 // Načítání blender renderů
 bool loadedSign = false;
 bool loadedBench = false;
+//bool loadedTree = false;
+
 objl::Loader sign;
 objl::Loader bench;
+//objl::Loader tree;
 
 // globální osvětlení
 GLfloat SunAmbient[] = { .7f, .7f, .6f, 1 };
@@ -228,8 +241,7 @@ GLfloat woodDiffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat woodSpecular[] = { .05f, .05f, .05f, 1.0f };
 GLfloat woodShininess = 10;
 
-unsigned char texture[TEXTURE_HEIGHT][TEXTURE_WIDTH][4];
-GLuint textureType[9];
+// TODO: přidat materiály slunci a měsíci
 
 bool collision(float x, float y, float z)
 {
@@ -696,8 +708,8 @@ void init()
 
 	// Dynamicky vygenerovaná textura
 	initTexture();
-	glGenTextures(1, &textureType[0]);
-	glBindTexture(GL_TEXTURE_2D, textureType[0]);
+	glGenTextures(1, &textureType[ground]);
+	glBindTexture(GL_TEXTURE_2D, textureType[ground]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -715,8 +727,8 @@ void init()
 		TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
 
 	// Načtená textura
-	setTexture("textury/wall_1024_ivy_05.tga", &textureType[1], false);
-	glBindTexture(GL_TEXTURE_2D, textureType[1]);
+	setTexture("textury/wall_1024_ivy_05.tga", &textureType[wall], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[wall]);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -729,8 +741,36 @@ void init()
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, wallDiffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, wallSpecular);
 
-	setTexture("textury/drevo.tga", &textureType[2], false);
-	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+	setTexture("textury/drevo.tga", &textureType[wood], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[wood]);
+
+	// Nastavení dreva
+	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	setTexture("textury/2k_sun.tga", &textureType[sun], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[sun]);
+
+	// Nastavení dreva
+	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	setTexture("textury/2k_moon.tga", &textureType[moon], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[moon]);
 
 	// Nastavení dreva
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
@@ -769,7 +809,7 @@ void drawGround(GLfloat x, GLfloat z)
 	// Pokud jsou vypnutý textury, aplikuj zelenou
 	if (textures)
 	{
-		glBindTexture(GL_TEXTURE_2D, textureType[0]);
+		glBindTexture(GL_TEXTURE_2D, textureType[ground]);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
 	else
@@ -810,7 +850,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	if (textures)
 	{
 		glColor3f(1, 1, 1);
-		glBindTexture(GL_TEXTURE_2D, textureType[1]);
+		glBindTexture(GL_TEXTURE_2D, textureType[wall]);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
 	else
@@ -923,7 +963,7 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 
 	if (cullface) glDisable(GL_CULL_FACE);
 
-	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+	glBindTexture(GL_TEXTURE_2D, textureType[wood]);
 
 	glTranslatef(x, y, z);
 	glRotatef(rotation, 0, 1, 0);
@@ -986,7 +1026,7 @@ void drawObjBench(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 	glGetBooleanv(GL_CULL_FACE, &cullface);
 	glGetBooleanv(GL_LIGHTING, &lighting);
 
-	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+	glBindTexture(GL_TEXTURE_2D, textureType[wood]);
 	
 	if (cullface) glDisable(GL_CULL_FACE);
 	if (textures) glDisable(GL_TEXTURE_2D);
@@ -1056,8 +1096,10 @@ void daycycle()
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, SunDirection);
 	glPopMatrix();
 
-	if (textures) glDisable(GL_TEXTURE_2D);
+	//if (textures) glDisable(GL_TEXTURE_2D);
 	glPushMatrix();
+
+	glBindTexture(GL_TEXTURE_2D, textureType[sun]);
 
 	// Slunce
 	glTranslatef(suon.x, suon.y, suon.z);
@@ -1067,12 +1109,14 @@ void daycycle()
 	glPopMatrix();
 	glPushMatrix();
 
-	// Mìsíc
+	glBindTexture(GL_TEXTURE_2D, textureType[moon]);
+
+	// Měsíc
 	glTranslatef(-suon.x, -suon.y, -suon.z);
 	glColor3f(1.0, 1.0, 1.0);
 	gluSphere(quadric, 5.0, 20, 25);
 
-	if (textures) glEnable(GL_TEXTURE_2D);
+	//if (textures) glEnable(GL_TEXTURE_2D);
 	glPopMatrix();
 	glPopMatrix();
 }
