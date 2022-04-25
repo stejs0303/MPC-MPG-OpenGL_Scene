@@ -9,13 +9,13 @@ OpenGL, GLU, GLUT, pain&amp;suffering
 *	2b  Menu - CHECK
 *	2b  Výpis textu - 
 *	2b  Ruční svítilna - -1000%
-*	2b  Blender model - 50% hotovy
-*	2b  Létání - ??? 
+*	2b  Blender model - 50% hotovy - přidal lavičku + textury
+*	2b  Létání - CHECK 
 *	1b  Stoupání, klesání - CHECK
 *	2b  Hod předmětu - CHECK
 *	2b  Simulace kroku - CHECK
 *	2b  Tlačítka -
-*	1b  Prùhlednost - Zakomentovaná
+*	1b  Prùhlednost - CHECK
 *	1b  Projekční paprsek - Nemám tucha so chce
 *	2b  Neprůchozí objekt - CHECK
 *	2b  Texturování - CHECK
