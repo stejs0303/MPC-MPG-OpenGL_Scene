@@ -19,7 +19,7 @@
 *						Menu - CHECK									2b
 *						Výpis textu -									2b
 *						Ruční svítilna - -1000%							2b
-*						Blender model -	50%								2b
+*						Blender model -	CHECK							2b
 *						Létání - CHECK									2b
 *						Stoupání, klesání - CHECK						1b
 *						Hod předmětu - CHECK							2b
@@ -33,12 +33,12 @@
 *
 * Očekáváný počet bodù:	x
 *
-* Ovládací klávesy:		w -- pohyb dopředu	q -- pohyb nahoru
-*						a -- pohyb doleva	e -- pohyb dolu
+* Ovládací klávesy:		w -- pohyb dopředu	q / PageUp -- pohyb nahoru
+*						a -- pohyb doleva	e / PageDown -- pohyb dolu 
 *						s -- pohyb dozadu	f -- svítilna
 *						d -- pohyb doprava	t -- hodit objekt
-*
-* Vlastní nápady:		x
+* 
+* Vlastní nápady:		
 *
 * Konfigurace:			Windows SDK 10.0.22000.0, Visual studio v143, C++14
 *****************************************************************************/
@@ -59,13 +59,13 @@
 #define MENU_MOVEMENT_SPEED2 1202
 #define MENU_MOVEMENT_SPEED4 1204
 
-#define TEXTURE_HEIGHT 512
-#define TEXTURE_WIDTH 512
-
 #define FLYMODE_ON 1301
 #define FLYMODE_OFF 1302
 
-#define BOBSPEED 270
+#define TEXTURE_HEIGHT 512
+#define TEXTURE_WIDTH 512
+
+#define BOBSPEED 230
 
 #define PI 3.14159265359
 #define PIOVER180 0.017453292519943f
@@ -190,31 +190,43 @@ GLUquadric* quadric = gluNewQuadric();
 
 // Načítání blender renderů
 bool loadedSign = false;
+bool loadedBench = false;
 objl::Loader sign;
+objl::Loader bench;
 
 // globální osvětlení
-GLfloat SunAmbient[] = { 2.1f, 2.1f, 1.8f, 1 };
-GLfloat SunDiffuse[] = { 1, 1, 1, 1.0f };
-GLfloat SunSpecular[] = { 1, 1, 1, 1.0f };
+GLfloat SunAmbient[] = { .7f, .7f, .6f, 1 };
+GLfloat SunDiffuse[] = { .7f, .7f, .7f, 1.0f };
+GLfloat SunSpecular[] = { .7f, .7f, .6f, 1.0f };
 GLfloat SunPosition[] = { 0, 150, 0, 0 };
 GLfloat SunDirection[] = { 0.0f, -1.0f, 0.0f };
 
-GLfloat MoonAmbient[] = { .8f, .8f, 1, 1 };
-GLfloat MoonDiffuse[] = { 1, 1, 1, 1.0f };
-GLfloat MoonSpecular[] = { 1, 1, 1, 1.0f };
+GLfloat MoonAmbient[] = { .3f, .3f, .6f, 1 };
+GLfloat MoonDiffuse[] = { .3f, .3f, .4f, 1.0f };
+GLfloat MoonSpecular[] = { .1f, .1f, .2f, 1.0f };
 GLfloat MoonPosition[] = { 0, -150, 0, 0 };
 GLfloat MoonDirection[] = { 0.0f, -1.0f, 0.0f };
 
-GLfloat flashlightAmbient[] = { .3f, .3f, .2f, 1 };
-GLfloat flashlightDiffuse[] = { .2f, .2f, .2f, 1.0f };
+GLfloat flashlightAmbient[] = { .2f, .2f, .1f, 1 };
+GLfloat flashlightDiffuse[] = { .7f, .7f, .7f, 1.0f };
 GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
 // Position a Direction vypocitat
 
 // materiál
-GLfloat materialAmbient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-GLfloat materialDiffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-GLfloat materialSpecular[] = { .0f, .0f, .0f, 1.0f };
-GLfloat materialShininess = 60;
+GLfloat groundAmbient[] = { .05f, .05f, .05f, 1 };
+GLfloat groundDiffuse[] = { 0.05f, 0.1f, 0.05f, 1.0f };
+GLfloat groundSpecular[] = { .0f, .0f, .0f, 1.0f };
+GLfloat groundShininess = 0;
+
+GLfloat wallAmbient[] = { 1, 1, 1, 1.0f };
+GLfloat wallDiffuse[] = { 0.7f, 0.8f, 0.8f, 1.0f };
+GLfloat wallSpecular[] = { .05f, .05f, .05f, 1.0f };
+GLfloat wallShininess = 5;
+
+GLfloat woodAmbient[] = { .4f, .4f, .4f, 1.0f };
+GLfloat woodDiffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+GLfloat woodSpecular[] = { .05f, .05f, .05f, 1.0f };
+GLfloat woodShininess = 10;
 
 unsigned char texture[TEXTURE_HEIGHT][TEXTURE_WIDTH][4];
 GLuint textureType[9];
@@ -465,6 +477,34 @@ void onKeyUp(unsigned char key, int mx, int my)
 	glutPostRedisplay();
 }
 
+void onSpecialKeyUp(int key, int x, int y)
+{
+	switch (key)
+	{ // Zkopírovat pohyb nahoru a dolu
+	case GLUT_KEY_PAGE_UP:
+		keyState[4] = false;
+		break;
+	case GLUT_KEY_PAGE_DOWN:
+		keyState[5] = false;
+		break;
+	}
+	glutPostRedisplay();
+}
+
+void onSpecialKeyDown(int key, int x, int y)
+{
+	switch (key)
+	{ // Zkopírovat pohyb nahoru a dolu
+	case GLUT_KEY_PAGE_UP:
+		keyState[4] = true;
+		break;
+	case GLUT_KEY_PAGE_DOWN:
+		keyState[5] = true;
+		break;
+	}
+	glutPostRedisplay();
+}
+
 void movement()
 {
 	float tempx, tempy, tempz;
@@ -541,14 +581,14 @@ void movement()
 		{
 			double temp = cam.bob;
 			cam.bob += PI / BOBSPEED;
-			cam.y += 0.5f * (sin(cam.bob) - sin(temp));
+			cam.y += .5f * (sin(cam.bob) - sin(temp));
 			if (cam.bob >= PI) cam.down = false;
 		}
 		else
 		{
 			double temp = cam.bob;
 			cam.bob -= PI / BOBSPEED;
-			cam.y += 0.5f * (sin(temp) - sin(cam.bob));
+			cam.y += .5f * (sin(temp) - sin(cam.bob));
 			if (cam.bob <= 0) cam.down = true;
 		}
 	}
@@ -619,12 +659,6 @@ void init()
 
 	glShadeModel(GL_SMOOTH);
 
-	// Nastavení materiálů
-	glMaterialf(GL_FRONT, GL_SHININESS, materialShininess);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, materialAmbient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, materialSpecular);
-
 	// Slunko
 	glEnable(GL_LIGHT0);				// zdroj 1
 	glLightfv(GL_LIGHT0, GL_AMBIENT, SunAmbient);
@@ -642,12 +676,11 @@ void init()
 	glLightfv(GL_LIGHT1, GL_POSITION, MoonPosition);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, MoonDirection);
 	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 90);
-
 	// Baterka
 	glLightfv(GL_LIGHT2, GL_AMBIENT, flashlightAmbient);
 	glLightfv(GL_LIGHT2, GL_DIFFUSE, flashlightDiffuse);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, flashlightSpecular);
-	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 5);
+	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 15);
 
 	// Quadric
 	gluQuadricDrawStyle(quadric, GLU_FILL);
@@ -657,7 +690,8 @@ void init()
 
 
 	loadedSign = sign.LoadFile("obj/cedule.obj");
-	
+	loadedBench = bench.LoadFile("obj/lavice.obj");
+
 	// !!Přidat textury!!
 
 	// Dynamicky vygenerovaná textura
@@ -670,6 +704,12 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	// Nastavení země
+	glMaterialf(GL_FRONT, GL_SHININESS, groundShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, groundAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, groundDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, groundSpecular);
+	
 	// Vytvoření textury a uložení do VRAM
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH,
 		TEXTURE_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
@@ -683,8 +723,20 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	setTexture("textury/textura.bmp", &textureType[2], false);
+	// Nastavení stěn
+	glMaterialf(GL_FRONT, GL_SHININESS, wallShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, wallAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, wallDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, wallSpecular);
+
+	setTexture("textury/drevo.tga", &textureType[2], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+
+	// Nastavení dreva
+	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -695,13 +747,16 @@ void init()
 
 	glEnable(GL_TEXTURE_2D);
 
-	//zed 1
+	// zed 1
 	colliderArr->push_back(Collider(123, 15, -127.8, 5, 30, 100));
-	//zed 2
+	// zed 2
 	colliderArr->push_back(Collider(27.8, 15, -128, 100, 30, 5));
-	//cedule
+	// cedule
 	colliderArr->push_back(Collider(-53, 10, -37, 6, 25, 14));
-
+	// lavice 1
+	colliderArr->push_back(Collider(78, 1, -114, 23, 20, 12));
+	// lavice 2
+	colliderArr->push_back(Collider(104, 1, -100, 12, 20, 23));
 }
 
 void drawGround(GLfloat x, GLfloat z)
@@ -714,7 +769,6 @@ void drawGround(GLfloat x, GLfloat z)
 	// Pokud jsou vypnutý textury, aplikuj zelenou
 	if (textures)
 	{
-		glColor3f(1, 1, 1);
 		glBindTexture(GL_TEXTURE_2D, textureType[0]);
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
@@ -727,6 +781,7 @@ void drawGround(GLfloat x, GLfloat z)
 	glBegin(GL_QUADS);
 	{
 		// Pozice v textuøe + vertex
+		glNormal3f(0, 1, 0);
 		glTexCoord2f(1.0, 1.0); glVertex3f(x / 2, 0, z / 2);
 		glTexCoord2f(0.0, 1.0); glVertex3f(-x / 2, 0, z / 2);
 		glTexCoord2f(0.0, 0.0); glVertex3f(-x / 2, 0, -z / 2);
@@ -736,6 +791,16 @@ void drawGround(GLfloat x, GLfloat z)
 
 	if (!textures) glEnable(GL_LIGHTING);
 	glPopMatrix();
+}
+
+void drawSmallStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
+{
+	
+}
+
+void drawBigStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
+{
+	
 }
 
 void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GLfloat depth)
@@ -758,6 +823,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Přední stěna
 	glBegin(GL_QUADS);
+	glNormal3f(0, 0, -1);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, 0);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, 0);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, 0);
@@ -766,6 +832,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Zadní stěna
 	glBegin(GL_QUADS);
+	glNormal3f(0, 0, 1);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, depth);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, depth);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, depth);
@@ -774,6 +841,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Levá stěna
 	glBegin(GL_QUADS);
+	glNormal3f(-1, 0, 0);
 	glTexCoord2f(1.0, 1.0); glVertex3f(0, 0, depth);
 	glTexCoord2f(1.0, 0.0); glVertex3f(0, -height, depth);
 	glTexCoord2f(0.0, 0.0); glVertex3f(0, -height, 0);
@@ -782,6 +850,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Pravá stěna
 	glBegin(GL_QUADS);
+	glNormal3f(1, 0, 0);
 	glTexCoord2f(0.0, 1.0); glVertex3f(width, 0, 0);
 	glTexCoord2f(0.0, 0.0); glVertex3f(width, -height, 0);
 	glTexCoord2f(1.0, 0.0); glVertex3f(width, -height, depth);
@@ -790,6 +859,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Vršek
 	glBegin(GL_QUADS);
+	glNormal3f(0, 1, 0);
 	glTexCoord2f(1.0, 1.0); glVertex3f(width, 0, 0);
 	glTexCoord2f(1.0, 0.9f); glVertex3f(width, 0, depth);
 	glTexCoord2f(0.9f, 0.9f); glVertex3f(0, 0, depth);
@@ -798,6 +868,7 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 
 	// Spodek
 	glBegin(GL_QUADS);
+	glNormal3f(0, -1, 0);
 	glTexCoord2f(0.1f, 0.0); glVertex3f(0, -height, 0);
 	glTexCoord2f(0.1f, 0.1f); glVertex3f(0, -height, depth);
 	glTexCoord2f(0.0, 0.1f); glVertex3f(width, -height, depth);
@@ -841,7 +912,7 @@ void drawWindow(GLfloat x, GLfloat y, GLfloat z)
 	glPopMatrix();
 }
 
-void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
+void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 {
 	glPushMatrix();
 
@@ -851,13 +922,11 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
 	glGetBooleanv(GL_LIGHTING, &lighting);
 
 	if (cullface) glDisable(GL_CULL_FACE);
-	if (lighting) glDisable(GL_LIGHTING);
-	if (textures) glDisable(GL_TEXTURE_2D);
-
-	glTranslatef(x, y, z);
-	glRotatef(90, 0, 1, 0);
 
 	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
 
 	for (size_t i = 0; i < sign.LoadedMeshes.size(); i++)
 	{
@@ -865,6 +934,8 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
 
 		if (mesh.MeshName == "Krychle.002") 
 		{
+			if (lighting) glDisable(GL_LIGHTING);
+			if (textures) glDisable(GL_TEXTURE_2D);
 			glDepthMask(GL_FALSE);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -872,21 +943,25 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
 			glColor4f(.8, .8, .8, 0.5f);
 		}
 		else
-		{
+		{	// Opravit hnědou barvu
+			if (textures) glEnable(GL_TEXTURE_2D);
+			if (lighting) glEnable(GL_LIGHTING);
 			glDisable(GL_BLEND);
 			glDepthMask(GL_TRUE);
+
 			glColor3b(54, 24, 17);
 		}
 		
 		glBegin(GL_QUADS);
 		for (size_t j = 0; j < mesh.Vertices.size(); j++)
 		{
+			glTexCoord2f(mesh.Vertices[j].TextureCoordinate.Y, mesh.Vertices[j].TextureCoordinate.X);
 			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
 		}
 		glEnd();
 
-		glBegin(GL_LINE_STRIP);
+	/*	glBegin(GL_LINE_STRIP);
 		for (size_t j = 0; j < mesh.Vertices.size(); j++)
 		{
 			if (mesh.MeshName == "Krychle.002") continue;
@@ -894,11 +969,71 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
 			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
 		}
+		glEnd();*/
+	}
+	
+	if (cullface) glEnable(GL_CULL_FACE);
+
+	glPopMatrix();
+}
+
+void drawObjBench(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
+{
+	glPushMatrix();
+
+	GLboolean cullface;
+	GLboolean lighting;
+	glGetBooleanv(GL_CULL_FACE, &cullface);
+	glGetBooleanv(GL_LIGHTING, &lighting);
+
+	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+	
+	if (cullface) glDisable(GL_CULL_FACE);
+	if (textures) glDisable(GL_TEXTURE_2D);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
+
+	for (size_t i = 0; i < bench.LoadedMeshes.size(); i++)
+	{
+		objl::Mesh mesh = bench.LoadedMeshes[i];
+		
+		if (strstr(mesh.MeshName.c_str(), "Drevo"))
+		{
+			if (textures)
+			{
+				glEnable(GL_TEXTURE_2D);
+				glColor3b(72, 64, 51);
+			}
+			else glColor3b(54, 24, 17);
+		}
+		else 
+		{	
+			if (textures) glDisable(GL_TEXTURE_2D);
+			glColor3f(.3f, .3f, .3f);
+		}
+
+		glBegin(GL_TRIANGLES);
+		for (size_t j = 0; j < mesh.Vertices.size(); j++)
+		{
+			glTexCoord2f(mesh.Vertices[j].TextureCoordinate.Y, mesh.Vertices[j].TextureCoordinate.X);
+			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
+			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
+		}
 		glEnd();
+
+	/*	glBegin(GL_LINE_STRIP);
+		for (size_t j = 0; j < mesh.Vertices.size(); j++)
+		{
+			glColor3b(0, 0, 0);
+			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
+			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
+		}
+		glEnd();*/
 	}
 
-	if (textures) glEnable(GL_TEXTURE_2D);
 	if (lighting) glEnable(GL_LIGHTING);
+	
 	if (cullface) glEnable(GL_CULL_FACE);
 
 	glPopMatrix();
@@ -913,6 +1048,13 @@ void daycycle()
 
 	glLightfv(GL_LIGHT0, GL_POSITION, SunPosition);
 	glLightfv(GL_LIGHT1, GL_POSITION, MoonPosition);
+
+	glPushMatrix();
+	glRotatef(suon.positionAngle, 0, 0, 1);
+	
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, MoonDirection);
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, SunDirection);
+	glPopMatrix();
 
 	if (textures) glDisable(GL_TEXTURE_2D);
 	glPushMatrix();
@@ -957,23 +1099,27 @@ bool throwTorus()
 
 void flashlight()
 {
-	GLfloat dir[] = { 0, 0, 1 };
-	GLfloat pos[] = { cam.x, cam.y, cam.z };
+	glPushMatrix();
 
-	// Pozice
+	glRotatef(1* (8 - cam.sensitivity), 0, 1, 0);
+	GLfloat pos[] = { cam.x, cam.y, cam.z };
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
-	// Směr
-	//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, dir);
+
+	glPopMatrix();
 }
 
 void informations()
 {
 	glColor3f(0, 0, 0);
 	glRasterPos3f(0, 30, 0);
-	std::string text = "x" + std::to_string(cam.x) + "\ny" + std::to_string(cam.y) + "\nz" + std::to_string(cam.z);
+	std::string text = "x" + std::to_string(cam.x) + " y" + std::to_string(cam.y) + " z" + std::to_string(cam.z);
+	std::string text2 = "sin(y_new) " + std::to_string(cam.y_new);
 	for (int i = 0; i < text.length(); i++) 
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text[i]);
-	
+
+	glRasterPos3f(0, 22, 0);
+	for (int i = 0; i < text2.length(); i++)
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text2[i]);
 }
 
 void onRedraw()
@@ -992,27 +1138,27 @@ void onRedraw()
 	glLoadIdentity();
 
 	// provedení transformace sceny (rotace/pohyb)
-	glRotatef(cam.y_new, 1, 0, 0);
+	// omezení na +- 90° ve vertikálním směru
+	glRotatef(cam.y_new <= -90 ? cam.y_new = -89.9f : cam.y_new > 90 ? cam.y_new = 89.9f : cam.y_new, 1, 0, 0);
 	glRotatef(cam.x_new, 0, 1, 0);
 	glTranslatef(cam.x, cam.y, cam.z);
 
 	// !!VLASTNÍ!!
 	drawGround(TEXTURE_HEIGHT / 2, TEXTURE_WIDTH / 2);
 
+	daycycle();
+	
 	drawWall(123, 15, -127.8, 5, 30, 100);
 	drawWall(27.8, 15, -128, 100, 30, 5);
-	if (loadedSign) drawObjSign(-50, -1, -30);
 
-	// hod torusem
+	if (loadedBench) drawObjBench(110, -11, -90, 90);
+	if (loadedBench) drawObjBench(88, -11, -110, 180);
+	if (loadedSign) drawObjSign(-50, -1, -30, 90);
+
 	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
 	
-	// baterka
-	if(flashlight) flashlight();
+	if(cam.flashlight) flashlight();
 
-	// Slunce a mìšíc
-	daycycle();
-
-	// Obstarává pohyb
 	movement();
 
 	informations();
@@ -1037,13 +1183,14 @@ int main(int argc, char* argv[])
 	glutMotionFunc(onMotion);
 	glutKeyboardFunc(onKeyDown);
 	glutKeyboardUpFunc(onKeyUp);
+	glutSpecialFunc(onSpecialKeyDown);
+	glutSpecialUpFunc(onSpecialKeyUp);
 	createMenu(menu);
 
 	glutIgnoreKeyRepeat(1);
 	init();
 
 	glutMainLoop();
-
 
 	gluDeleteQuadric(quadric);
 	delete colliderArr;
