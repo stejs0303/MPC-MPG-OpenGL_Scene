@@ -2,6 +2,7 @@
 #include "OBJ_Loader.h"
 #include <iostream>
 #include <vector>
+#include <string>
 #include <cmath>
 #include <GL/glut.h>
 
@@ -24,7 +25,7 @@
 *						Hod předmětu - CHECK							2b
 *						Simulace kroku - CHECK							2b
 *						Tlačítka -										2b
-*						Průhlednost -									1b
+*						Průhlednost - CHECK								1b
 *						Projekční paprsek -								1b
 *						Neprůchozí objekt - CHECK						2b
 *						Texturování - CHECK								2b
@@ -61,7 +62,7 @@
 #define TEXTURE_HEIGHT 512
 #define TEXTURE_WIDTH 512
 
-#define BOBSPEED 250
+#define BOBSPEED 270
 
 #define PI 3.14159265359
 #define PIOVER180 0.017453292519943f
@@ -71,9 +72,9 @@ struct Player
 	// Pozice ve světě
 	float x, y, z;
 
-	float x_new, y_new;
-	float x_old, y_old;
-	float x_temp, y_temp;
+	float x_new, y_new, z_new;
+	float x_old, y_old, z_old;
+	float x_temp, y_temp, z_temp;
 
 	double bob = 0;
 	bool down = true;
@@ -197,8 +198,8 @@ GLfloat MoonSpecular[] = { 1, 1, 1, 1.0f };
 GLfloat MoonPosition[] = { 0, -150, 0, 0 };
 GLfloat MoonDirection[] = { 0.0f, -1.0f, 0.0f };
 
-GLfloat flashlightAmbient[] = { 2, 2, 1.5, 1 };
-GLfloat flashlightDiffuse[] = { 1, 1, 1, 1.0f };
+GLfloat flashlightAmbient[] = { .3f, .3f, .2f, 1 };
+GLfloat flashlightDiffuse[] = { .2f, .2f, .2f, 1.0f };
 GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
 // Position a Direction vypocitat
 
@@ -276,7 +277,8 @@ void menu(int value)
 		break;
 
 	case MENU_TIMER_RESET:
-		// TODO: reset animací
+		animations = false;
+		suon.positionAngle = 0;
 		break;
 
 	case MENU_TEXTURES_ON:
@@ -321,7 +323,7 @@ inline void createMenu(void(*func)(int value))
 	int idTimer = glutCreateMenu(func);
 	glutAddMenuEntry("Spustit", MENU_TIMER_ON);
 	glutAddMenuEntry("Zastavit", MENU_TIMER_OFF);
-	glutAddMenuEntry("Resetovat velikost", MENU_TIMER_RESET);
+	glutAddMenuEntry("Resetovat", MENU_TIMER_RESET);
 
 	int idTextures = glutCreateMenu(func);
 	glutAddMenuEntry("Vypnout", MENU_TEXTURES_OFF);
@@ -606,7 +608,7 @@ void init()
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, SunDirection);
 	glLightf(GL_LIGHT0, GL_SPOT_CUTOFF, 90);
 
-	// Mìsíc
+	// Měsíc
 	glEnable(GL_LIGHT1);				// zdroj 2
 	glLightfv(GL_LIGHT1, GL_AMBIENT, MoonAmbient);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, MoonDiffuse);
@@ -619,7 +621,7 @@ void init()
 	glLightfv(GL_LIGHT2, GL_AMBIENT, flashlightAmbient);
 	glLightfv(GL_LIGHT2, GL_DIFFUSE, flashlightDiffuse);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, flashlightSpecular);
-	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 15);
+	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 5);
 
 	// Quadric
 	gluQuadricDrawStyle(quadric, GLU_FILL);
@@ -655,6 +657,14 @@ void init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+	setTexture("textury/textura.bmp", &textureType[2], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[2]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glEnable(GL_TEXTURE_2D);
@@ -663,6 +673,8 @@ void init()
 	colliderArr->push_back(Collider(123, 15, -127.8, 5, 30, 100));
 	//zed 2
 	colliderArr->push_back(Collider(27.8, 15, -128, 100, 30, 5));
+	//cedule
+	colliderArr->push_back(Collider(-53, 10, -37, 6, 25, 14));
 
 }
 
@@ -803,7 +815,7 @@ void drawWindow(GLfloat x, GLfloat y, GLfloat z)
 	glPopMatrix();
 }
 
-void drawObjSign()
+void drawObjSign(GLfloat x, GLfloat y, GLfloat z)
 {
 	glPushMatrix();
 
@@ -816,18 +828,33 @@ void drawObjSign()
 	if (lighting) glDisable(GL_LIGHTING);
 	if (textures) glDisable(GL_TEXTURE_2D);
 
-	glTranslatef(0, -1, 0);
+	glTranslatef(x, y, z);
 	glRotatef(90, 0, 1, 0);
+
+	glBindTexture(GL_TEXTURE_2D, textureType[2]);
 
 	for (size_t i = 0; i < sign.LoadedMeshes.size(); i++)
 	{
 		objl::Mesh mesh = sign.LoadedMeshes[i];
 
+		if (mesh.MeshName == "Krychle.002") 
+		{
+			glDepthMask(GL_FALSE);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			glColor4f(.8, .8, .8, 0.5f);
+		}
+		else
+		{
+			glDisable(GL_BLEND);
+			glDepthMask(GL_TRUE);
+			glColor3b(54, 24, 17);
+		}
+		
 		glBegin(GL_QUADS);
 		for (size_t j = 0; j < mesh.Vertices.size(); j++)
 		{
-			if (mesh.MeshName == "Krychle.002") glColor3b(130, 160, 120);
-			else glColor3b(54, 24, 17);
 			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
 		}
@@ -836,6 +863,7 @@ void drawObjSign()
 		glBegin(GL_LINE_STRIP);
 		for (size_t j = 0; j < mesh.Vertices.size(); j++)
 		{
+			if (mesh.MeshName == "Krychle.002") continue;
 			glColor3b(0, 0, 0);
 			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
@@ -863,22 +891,13 @@ void daycycle()
 	if (textures) glDisable(GL_TEXTURE_2D);
 	glPushMatrix();
 
-	/*int texture;
-	glGetIntegerv(GL_TEXTURE_2D, &texture);
-	glBindTexture(GL_TEXTURE_2D, textureType[1]);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);*/
-
 	// Slunce
 	glTranslatef(suon.x, suon.y, suon.z);
 	glColor3f(1.0, 1.0, 0.0);
 	gluSphere(quadric, 10.0, 20, 50);
 
-	/*glBindTexture(GL_TEXTURE_2D, textureType[texture]);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);*/
-
 	glPopMatrix();
 	glPushMatrix();
-
 
 	// Mìsíc
 	glTranslatef(-suon.x, -suon.y, -suon.z);
@@ -912,15 +931,23 @@ bool throwTorus()
 
 void flashlight()
 {
-	glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
-
-	GLfloat dir[] = { modelViewMatrix[2], modelViewMatrix[6], modelViewMatrix[10] };
+	GLfloat dir[] = { 0, 0, 1 };
 	GLfloat pos[] = { cam.x, cam.y, cam.z };
 
 	// Pozice
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
 	// Směr
-	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, dir);
+	//glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, dir);
+}
+
+void informations()
+{
+	glColor3f(0, 0, 0);
+	glRasterPos3f(0, 30, 0);
+	std::string text = "x" + std::to_string(cam.x) + "\ny" + std::to_string(cam.y) + "\nz" + std::to_string(cam.z);
+	for (int i = 0; i < text.length(); i++) 
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text[i]);
+	
 }
 
 void onRedraw()
@@ -948,23 +975,21 @@ void onRedraw()
 
 	drawWall(123, 15, -127.8, 5, 30, 100);
 	drawWall(27.8, 15, -128, 100, 30, 5);
-	
-	// Průhledné okno
-	//drawWindow(5, 5, 5);
-	
-	if (loadedSign) drawObjSign();
+	if (loadedSign) drawObjSign(-50, -1, -30);
 
 	// hod torusem
 	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
 	
 	// baterka
-	if (cam.flashlight) flashlight();
+	if(flashlight) flashlight();
 
 	// Slunce a mìšíc
 	daycycle();
 
 	// Obstarává pohyb
 	movement();
+
+	informations();
 
 	glFlush();
 	glutSwapBuffers();
