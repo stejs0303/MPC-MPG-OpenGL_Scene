@@ -62,8 +62,8 @@
 #define FLYMODE_ON 1301
 #define FLYMODE_OFF 1302
 
-#define TEXTURE_HEIGHT 512
-#define TEXTURE_WIDTH 512
+#define TEXTURE_HEIGHT 400
+#define TEXTURE_WIDTH 400
 
 #define BOBSPEED 230
 
@@ -115,7 +115,7 @@ struct Throwable
 	// Vzdálenost 
 	int distance = 0;
 
-	int rotation = 0;
+	GLfloat rotation = 0;
 
 	// Hozený?
 	bool thrown = false;
@@ -160,7 +160,7 @@ float nearPlane = 0.1f;
 float farPlane = 600;
 
 // pozice kamery
-Player cam(0, 0, -100);
+Player cam(0, 0, 0);
 
 // strukt objektu
 Throwable torus;
@@ -177,6 +177,9 @@ bool flymode = false;
 // ovládá textury
 bool textures = true;
 
+// Náhodný offset pro trávu
+GLfloat rand_;
+
 unsigned char texture[TEXTURE_HEIGHT][TEXTURE_WIDTH][4];
 
 enum Textures
@@ -185,7 +188,9 @@ enum Textures
 	wall = 1,
 	wood = 2,
 	sun = 3,
-	moon = 4
+	moon = 4,
+	bark = 5,
+	leaves = 6
 };
 
 GLuint textureType[9];
@@ -201,11 +206,13 @@ GLUquadric* quadric = gluNewQuadric();
 // Načítání blender renderů
 bool loadedSign = false;
 bool loadedBench = false;
-//bool loadedTree = false;
+bool loadedTree = false;
+bool loadedDeadTree = false;
 
 objl::Loader sign;
 objl::Loader bench;
-//objl::Loader tree;
+objl::Loader tree;
+objl::Loader deadTree;
 
 // globální osvětlení
 GLfloat SunAmbient[] = { .7f, .7f, .6f, 1 };
@@ -226,8 +233,8 @@ GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
 // Position a Direction vypocitat
 
 // materiál
-GLfloat groundAmbient[] = { .05f, .05f, .05f, 1 };
-GLfloat groundDiffuse[] = { 0.05f, 0.1f, 0.05f, 1.0f };
+GLfloat groundAmbient[] = { .0f, .0f, .0f, 1 };
+GLfloat groundDiffuse[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 GLfloat groundSpecular[] = { .0f, .0f, .0f, 1.0f };
 GLfloat groundShininess = 0;
 
@@ -593,14 +600,14 @@ void movement()
 		{
 			double temp = cam.bob;
 			cam.bob += PI / BOBSPEED;
-			cam.y += .5f * (sin(cam.bob) - sin(temp));
+			cam.y += .5f * (float)(sin(cam.bob) - sin(temp));
 			if (cam.bob >= PI) cam.down = false;
 		}
 		else
 		{
 			double temp = cam.bob;
 			cam.bob -= PI / BOBSPEED;
-			cam.y += .5f * (sin(temp) - sin(cam.bob));
+			cam.y += .5f * (float)(sin(temp) - sin(cam.bob));
 			if (cam.bob <= 0) cam.down = true;
 		}
 	}
@@ -645,7 +652,6 @@ void onMotion(int x, int y)
 void initTexture()
 {
 	// Generuje náhodnou texturu "trávy"
-	srand((unsigned int)std::time(0));
 	for (int j = 0; j < TEXTURE_HEIGHT; j++)
 	{
 		unsigned char* pix = texture[j][0];
@@ -703,6 +709,7 @@ void init()
 
 	loadedSign = sign.LoadFile("obj/cedule.obj");
 	loadedBench = bench.LoadFile("obj/lavice.obj");
+	loadedTree = tree.LoadFile("obj/strom.obj");
 
 	// !!Přidat textury!!
 
@@ -758,7 +765,6 @@ void init()
 	setTexture("textury/2k_sun.tga", &textureType[sun], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[sun]);
 
-	// Nastavení dreva
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
@@ -772,7 +778,32 @@ void init()
 	setTexture("textury/2k_moon.tga", &textureType[moon], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[moon]);
 
-	// Nastavení dreva
+	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	setTexture("textury/bark.tga", &textureType[bark], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[bark]);
+
+	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	setTexture("textury/leaves.tga", &textureType[leaves], false);
+	glBindTexture(GL_TEXTURE_2D, textureType[leaves]);
+
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
@@ -788,15 +819,23 @@ void init()
 	glEnable(GL_TEXTURE_2D);
 
 	// zed 1
-	colliderArr->push_back(Collider(123, 15, -127.8, 5, 30, 100));
+	colliderArr->push_back(Collider(95, 15, -99.8f, 5, 30, 50));
 	// zed 2
-	colliderArr->push_back(Collider(27.8, 15, -128, 100, 30, 5));
+	colliderArr->push_back(Collider(-0.2f, 15, -100, 100, 30, 5));
 	// cedule
-	colliderArr->push_back(Collider(-53, 10, -37, 6, 25, 14));
+	colliderArr->push_back(Collider(-26, 6, -21, 2, 30, 12));
 	// lavice 1
-	colliderArr->push_back(Collider(78, 1, -114, 23, 20, 12));
+	colliderArr->push_back(Collider(79, 2, -75, 10, 17, 22));
 	// lavice 2
-	colliderArr->push_back(Collider(104, 1, -100, 12, 20, 23));
+	colliderArr->push_back(Collider(53, 2, -90, 22, 17, 11));
+	// Stromy
+	colliderArr->push_back(Collider(80, 5, 20, 10, 20, 10));
+	colliderArr->push_back(Collider(-5, 5, 47, 10, 20, 10));
+	colliderArr->push_back(Collider(12, 5, 77, 10, 20, 10));
+	colliderArr->push_back(Collider(51, 5, 69, 10, 20, 10));
+
+	srand((unsigned int)std::time(0));
+	rand_ = rand() % 3;
 }
 
 void drawGround(GLfloat x, GLfloat z)
@@ -835,12 +874,246 @@ void drawGround(GLfloat x, GLfloat z)
 
 void drawSmallStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 {
-	
+	glPushMatrix();
+
+	GLboolean lighting;
+	glGetBooleanv(GL_LIGHTING, &lighting);
+	if (lighting) glDisable(GL_LIGHTING);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
+
+	glBegin(GL_QUADS);
+
+
+
+	glEnd();
+
+	if (lighting) glEnable(GL_LIGHTING);
+
+	glPopMatrix();
 }
 
 void drawBigStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 {
+	glPushMatrix();
+
+	GLboolean lighting;
+	glGetBooleanv(GL_LIGHTING, &lighting);
+	if (lighting) glDisable(GL_LIGHTING);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
+
+	glBegin(GL_QUADS);
+
+
+
+	glEnd();
+
+	if (lighting) glEnable(GL_LIGHTING);
+
+	glPopMatrix();
+}
+
+void drawGrassPatch(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
+{
+	glPushMatrix();
+
+	GLboolean lighting;
+	GLboolean cullface;
+
+	glGetBooleanv(GL_LIGHTING, &lighting);
+	glGetBooleanv(GL_CULL_FACE, &cullface);
+
+	if (cullface) glDisable(GL_CULL_FACE);
+
+	glBindTexture(GL_TEXTURE_2D, textureType[ground]);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
+
+	glColor3f(0.1f, .8f, 0.1f);
+
+	glBegin(GL_QUADS);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(0 + rand_, 0, 0);
+	glVertex3f(0 + rand_, 2, 0);
+	glVertex3f(0.5f + rand_, 2, 0);
+	glVertex3f(0.5f + rand_, 0, 0);
+
+	glTexCoord2f(0.2f, 0.4f);
+	glNormal3f(0, 0, 1);
+	glVertex3f(4, 0, 2 + rand_);
+	glVertex3f(4, 3, 2 + rand_);
+	glVertex3f(4.5f, 3, 2 + rand_);
+	glVertex3f(4.5f, 0, 2 + rand_);
 	
+	glNormal3f(0, 0, 1);
+	glVertex3f(-3, 0, 5 - rand_);
+	glVertex3f(-3, 2, 5 - rand_);
+	glVertex3f(-2.5f, 2, 5 - rand_);
+	glVertex3f(-2.5f, 0, 5 - rand_);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(-7, 0, -1);
+	glVertex3f(-7, 2, -1);
+	glVertex3f(-6.5f, 2, -1);
+	glVertex3f(-6.5f, 0, -1);
+
+	glTexCoord2f(0.6f, 0.7f);
+	glNormal3f(0, 0, 1);
+	glVertex3f(9 - rand_, 0, -6);
+	glVertex3f(9 - rand_, 3, -6);
+	glVertex3f(9.5f - rand_, 3, -6);
+	glVertex3f(9.5f - rand_, 0, -6);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(-4 + rand_, 0, -6);
+	glVertex3f(-4 + rand_, 2, -6);
+	glVertex3f(-3.5f + rand_, 2, -6);
+	glVertex3f(-3.5f + rand_, 0, -6);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(3, 0, 6 - rand_);
+	glVertex3f(3, 2, 6 - rand_);
+	glVertex3f(3.5f, 2, 6 - rand_);
+	glVertex3f(3.5f, 0, 6 - rand_);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(1, 0, -2);
+	glVertex3f(1, 3, -2);
+	glVertex3f(1.5f, 3, -2);
+	glVertex3f(1.5f, 0, -2);
+	
+	glTexCoord2f(0.45f, 0.4f);
+	glNormal3f(0, 0, 1);
+	glVertex3f(2.5f, 0, -4);
+	glVertex3f(2.5f, 1, -4);
+	glVertex3f(3, 1, -4);
+	glVertex3f(3, 0, -4);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(-2, 0, 3);
+	glVertex3f(-2, 1, 3);
+	glVertex3f(-1.5f, 1, 3);
+	glVertex3f(-1.5f, 0, 3);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(7.5f, 0, -1);
+	glVertex3f(7.5f, 1, -1);
+	glVertex3f(8, 1, -1);
+	glVertex3f(8, 0, -1);
+
+	glTexCoord2f(0.1f, 0.154f);
+	glNormal3f(0, 0, 1);
+	glVertex3f(-4.5f - rand_, 0, -3);
+	glVertex3f(-4.5f - rand_, 1, -3);
+	glVertex3f(-4 - rand_, 1, -3);
+	glVertex3f(-4 - rand_, 0, -3);
+
+	glNormal3f(0, 0, 1);
+	glVertex3f(-1 , 0, 1);
+	glVertex3f(-1 , 1, 1);
+	glVertex3f(-1.5f, 1, 1);
+	glVertex3f(-1.5f, 0, 1);
+
+	glEnd();
+
+	glRotatef(90, 0, 1, 0);
+	glTranslatef(3, 0, 1);
+
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(0.22f, 0.9f);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(0 + rand_, 0, 0);
+	glVertex3f(0 + rand_, 2, 0);
+	glVertex3f(0.5f + rand_, 2, 0);
+	glVertex3f(0.5f + rand_, 0, 0);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(4, 0, 2 + rand_);
+	glVertex3f(4, 3, 2 + rand_);
+	glVertex3f(4.5f, 3, 2 + rand_);
+	glVertex3f(4.5f, 0, 2 + rand_);
+
+	glTexCoord2f(0.723f, 0.8f);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-3, 0, 5 - rand_);
+	glVertex3f(-3, 2, 5 - rand_);
+	glVertex3f(-2.5f, 2, 5 - rand_);
+	glVertex3f(-2.5f, 0, 5 - rand_);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-7, 0, -1);
+	glVertex3f(-7, 2, -1);
+	glVertex3f(-6.5f, 2, -1);
+	glVertex3f(-6.5f, 0, -1);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(9 - rand_, 0, -6);
+	glVertex3f(9 - rand_, 3, -6);
+	glVertex3f(9.5f - rand_, 3, -6);
+	glVertex3f(9.5f - rand_, 0, -6);
+	
+	glTexCoord2f(0.13f, 0.74f);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-4 + rand_, 0, -6);
+	glVertex3f(-4 + rand_, 2, -6);
+	glVertex3f(-3.5f + rand_, 2, -6);
+	glVertex3f(-3.5f + rand_, 0, -6);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(3, 0, 6 - rand_);
+	glVertex3f(3, 2, 6 - rand_);
+	glVertex3f(3.5f, 2, 6 - rand_);
+	glVertex3f(3.5f, 0, 6 - rand_);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(1, 0, -2);
+	glVertex3f(1, 3, -2);
+	glVertex3f(1.5f, 3, -2);
+	glVertex3f(1.5f, 0, -2);
+
+	glTexCoord2f(0.87f, 0.45f);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(2.5f, 0, -4);
+	glVertex3f(2.5f, 1, -4);
+	glVertex3f(3, 1, -4);
+	glVertex3f(3, 0, -4);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-2, 0, 3);
+	glVertex3f(-2, 1, 3);
+	glVertex3f(-1.5f, 1, 3);
+	glVertex3f(-1.5f, 0, 3);
+
+	glTexCoord2f(0.33f, 0.3f);
+	glNormal3f(-1, 0, 0);
+	glVertex3f(7.5f, 0, -1);
+	glVertex3f(7.5f, 1, -1);
+	glVertex3f(8, 1, -1);
+	glVertex3f(8, 0, -1);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-4.5f - rand_, 0, -3);
+	glVertex3f(-4.5f - rand_, 1, -3);
+	glVertex3f(-4 - rand_, 1, -3);
+	glVertex3f(-4 - rand_, 0, -3);
+
+	glNormal3f(-1, 0, 0);
+	glVertex3f(-1, 0, 1);
+	glVertex3f(-1, 1, 1);
+	glVertex3f(-1.5f, 1, 1);
+	glVertex3f(-1.5f, 0, 1);
+
+	glEnd();
+
+	if (cullface) glEnable(GL_CULL_FACE);
+
+	glPopMatrix();
 }
 
 void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GLfloat depth)
@@ -980,7 +1253,7 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			glColor4f(.8, .8, .8, 0.5f);
+			glColor4f(.8f, .8f, .8f, 0.5f);
 		}
 		else
 		{	// Opravit hnědou barvu
@@ -1000,16 +1273,6 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
 		}
 		glEnd();
-
-	/*	glBegin(GL_LINE_STRIP);
-		for (size_t j = 0; j < mesh.Vertices.size(); j++)
-		{
-			if (mesh.MeshName == "Krychle.002") continue;
-			glColor3b(0, 0, 0);
-			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
-			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
-		}
-		glEnd();*/
 	}
 	
 	if (cullface) glEnable(GL_CULL_FACE);
@@ -1061,19 +1324,45 @@ void drawObjBench(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
 		}
 		glEnd();
-
-	/*	glBegin(GL_LINE_STRIP);
-		for (size_t j = 0; j < mesh.Vertices.size(); j++)
-		{
-			glColor3b(0, 0, 0);
-			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
-			glVertex3f(mesh.Vertices[j].Position.X, mesh.Vertices[j].Position.Y, mesh.Vertices[j].Position.Z);
-		}
-		glEnd();*/
 	}
 
 	if (lighting) glEnable(GL_LIGHTING);
-	
+	if (textures) glEnable(GL_TEXTURE_2D);
+	if (cullface) glEnable(GL_CULL_FACE);
+
+	glPopMatrix();
+}
+
+void drawObjTree(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation, GLfloat scale)
+{
+	glPushMatrix();
+
+	GLboolean cullface;
+	glGetBooleanv(GL_CULL_FACE, &cullface);
+	if (cullface) glDisable(GL_CULL_FACE);
+
+	glTranslatef(x, y, z);
+	glRotatef(rotation, 0, 1, 0);
+
+	for (size_t i = 0; i < tree.LoadedMeshes.size(); i++)
+	{
+		objl::Mesh mesh = tree.LoadedMeshes[i];
+
+		if (strstr(mesh.MeshName.c_str(), "Kmen"))
+			glBindTexture(GL_TEXTURE_2D, textureType[bark]);
+		else		
+			glBindTexture(GL_TEXTURE_2D, textureType[leaves]);
+
+		glBegin(GL_TRIANGLES);
+		for (size_t j = 0; j < mesh.Vertices.size(); j++)
+		{
+			glTexCoord2f(mesh.Vertices[j].TextureCoordinate.Y, mesh.Vertices[j].TextureCoordinate.X);
+			glNormal3f(mesh.Vertices[j].Normal.X, mesh.Vertices[j].Normal.Y, mesh.Vertices[j].Normal.Z);
+			glVertex3f(mesh.Vertices[j].Position.X/scale, mesh.Vertices[j].Position.Y/scale, mesh.Vertices[j].Position.Z/scale);
+		}
+		glEnd();
+	}
+
 	if (cullface) glEnable(GL_CULL_FACE);
 
 	glPopMatrix();
@@ -1096,7 +1385,6 @@ void daycycle()
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, SunDirection);
 	glPopMatrix();
 
-	//if (textures) glDisable(GL_TEXTURE_2D);
 	glPushMatrix();
 
 	glBindTexture(GL_TEXTURE_2D, textureType[sun]);
@@ -1116,7 +1404,6 @@ void daycycle()
 	glColor3f(1.0, 1.0, 1.0);
 	gluSphere(quadric, 5.0, 20, 25);
 
-	//if (textures) glEnable(GL_TEXTURE_2D);
 	glPopMatrix();
 	glPopMatrix();
 }
@@ -1145,7 +1432,7 @@ void flashlight()
 {
 	glPushMatrix();
 
-	glRotatef(1* (8 - cam.sensitivity), 0, 1, 0);
+	glRotatef(1 * (8 - cam.sensitivity), 0, 1, 0);
 	GLfloat pos[] = { cam.x, cam.y, cam.z };
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
 
@@ -1169,7 +1456,7 @@ void informations()
 void onRedraw()
 {
 	// Parametry pro mazání roviny
-	glClearColor(.8, .8, .8, 0.0);
+	glClearColor(.8f, .8f, .8f, 0.0f);
 	glClearDepth(1);
 
 	// mazání roviny
@@ -1191,14 +1478,32 @@ void onRedraw()
 	drawGround(TEXTURE_HEIGHT / 2, TEXTURE_WIDTH / 2);
 
 	daycycle();
+
+	drawWall(95, 15, -99.8f, 5, 30, 50);
+	drawWall(-0.2f, 15, -100, 100, 30, 5);
+
+	drawGrassPatch(87, -15, -87, 0);
+	drawGrassPatch(87, -15, -70, 90);
+	drawGrassPatch(87, -15, -60, 0);
+	drawGrassPatch(87, -15, -52, 90);
+	drawGrassPatch(70, -15, -87, 90);
+	drawGrassPatch(60, -15, -87, 0);
+	drawGrassPatch(52, -15, -87, 180);
+
+	drawGrassPatch(60, -15, -52, 0);
+	drawGrassPatch(55, -15, -47, 90);
+	drawGrassPatch(51, -15, -60, 0);
+
+	if (loadedBench) drawObjBench(85, -11, -65, 90);
+	if (loadedBench) drawObjBench(63, -11, -85, 180);
 	
-	drawWall(123, 15, -127.8, 5, 30, 100);
-	drawWall(27.8, 15, -128, 100, 30, 5);
+	if (loadedTree) drawObjTree(56, -15, 74, 0, 1);
+	if (loadedTree) drawObjTree(17, -15, 82, 180, 1.4f);
+	if (loadedTree) drawObjTree(0, -15, 52, 90, 1);
+	if (loadedTree) drawObjTree(85, -15, 25, 135, 1.5f);
 
-	if (loadedBench) drawObjBench(110, -11, -90, 90);
-	if (loadedBench) drawObjBench(88, -11, -110, 180);
-	if (loadedSign) drawObjSign(-50, -1, -30, 90);
-
+	if (loadedSign) drawObjSign(-25, -4, -15, 90);
+	
 	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
 	
 	if(cam.flashlight) flashlight();
