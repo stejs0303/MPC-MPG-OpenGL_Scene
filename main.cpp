@@ -6,19 +6,19 @@
 #include <cmath>
 #include <GL/glut.h>
 
-/*****************************************************************************
+/**************************************************************************************************
 * Autor:				Jan Stejskal
 * ID:					xstejs31 / 211272
 *
-* Název:				x
+* Název:				Park
 *
 * Vypracované úlohy:	Modelování objektů -							3b
 *						Animace - CHECK									1b
 *						Osvětlení - CHECK								1b
 *						Volný pohyb v horizontální rovině - CHECK		1b
 *						Menu - CHECK									2b
-*						Výpis textu -									2b
-*						Ruční svítilna - -1000%							2b
+*						Výpis textu - tak napůl							2b
+*						Ruční svítilna - CHECK							2b
 *						Blender model -	CHECK							2b
 *						Létání - CHECK									2b
 *						Stoupání, klesání - CHECK						1b
@@ -31,17 +31,17 @@
 *						Texturování - CHECK								2b
 *						Bézierovy pláty -								2b
 *
-* Očekáváný počet bodù:	x
+* Očekáváný počet bodù:	24
 *
 * Ovládací klávesy:		w -- pohyb dopředu	q / PageUp -- pohyb nahoru
 *						a -- pohyb doleva	e / PageDown -- pohyb dolu 
 *						s -- pohyb dozadu	f -- svítilna
 *						d -- pohyb doprava	t -- hodit objekt
 * 
-* Vlastní nápady:		
+* Vlastní nápady:		...
 *
-* Konfigurace:			Windows SDK 10.0.22000.0, Visual studio v143, C++14
-*****************************************************************************/
+* Konfigurace:			Windows SDK 10.0.22000.0, Visual studio v143, C++14, Debug x64, bez ladění
+****************************************************************************************************/
 
 #define MENU_RESET 1001
 #define MENU_EXIT 1002
@@ -155,6 +155,7 @@ struct Collider
 };
 
 // nastaveni projekce
+float w, h;
 float fov = 60.0;
 float nearPlane = 0.1f;
 float farPlane = 600;
@@ -227,9 +228,10 @@ GLfloat MoonSpecular[] = { .1f, .1f, .2f, 1.0f };
 GLfloat MoonPosition[] = { 0, -150, 0, 0 };
 GLfloat MoonDirection[] = { 0.0f, -1.0f, 0.0f };
 
-GLfloat flashlightAmbient[] = { .2f, .2f, .1f, 1 };
+GLfloat flashlightAmbient[] = { .3f, .3f, .2f, 1 };
 GLfloat flashlightDiffuse[] = { .7f, .7f, .7f, 1.0f };
 GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
+GLfloat flashlightDirection[] = {0, 0, -1};
 // Position a Direction vypocitat
 
 // materiál
@@ -239,8 +241,8 @@ GLfloat groundSpecular[] = { .0f, .0f, .0f, 1.0f };
 GLfloat groundShininess = 0;
 
 GLfloat wallAmbient[] = { 1, 1, 1, 1.0f };
-GLfloat wallDiffuse[] = { 0.7f, 0.8f, 0.8f, 1.0f };
-GLfloat wallSpecular[] = { .05f, .05f, .05f, 1.0f };
+GLfloat wallDiffuse[] = { 1, 1, 1, 1.0f };
+GLfloat wallSpecular[] = { .2f, .2f, .2f, 1.0f };
 GLfloat wallShininess = 5;
 
 GLfloat woodAmbient[] = { .4f, .4f, .4f, 1.0f };
@@ -248,29 +250,20 @@ GLfloat woodDiffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 GLfloat woodSpecular[] = { .05f, .05f, .05f, 1.0f };
 GLfloat woodShininess = 10;
 
-// TODO: přidat materiály slunci a měsíci
+GLfloat leavesAmbient[] = { .3f, .3f, .3f, 1.0f };
+GLfloat leavesDiffuse[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+GLfloat leavesSpecular[] = { .05f, .05f, .05f, 1.0f };
+GLfloat leavesShininess = 10;
+
 
 bool collision(float x, float y, float z)
 {
 	for (size_t i = 0; i < colliderArr->size(); i++)
-	{
 		if ((-x >= colliderArr->at(i).x && -x < colliderArr->at(i).x + colliderArr->at(i).width) &&
 			(-z >= colliderArr->at(i).z && -z < colliderArr->at(i).z + colliderArr->at(i).depth) &&
-			(-y + 17 >= colliderArr->at(i).y && -y + 17 < colliderArr->at(i).y + colliderArr->at(i).height))
+			(-y + 17 >= colliderArr->at(i).y && -y + 17 < colliderArr->at(i).y + colliderArr->at(i).height)) 
 			return false;
-	}
 	return true;
-}
-
-void testing()
-{
-	glPushMatrix();
-
-	glTranslatef(SunPosition[0], SunPosition[1], SunPosition[2]);
-	glColor3f(1.0, 1.0, 0.0);
-	gluSphere(quadric, 3.0, 20, 20);
-
-	glPopMatrix();
 }
 
 void onTimer(int value)
@@ -278,7 +271,7 @@ void onTimer(int value)
 	if (animations)
 	{
 		if (suon.positionAngle >= 360) suon.positionAngle = 0;
-		suon.positionAngle += .5;
+		suon.positionAngle += .08;
 
 		glutTimerFunc(15, onTimer, 10);
 	}
@@ -289,7 +282,6 @@ void onTimer(int value)
 
 		glutTimerFunc(15, onTimer, 10);
 	}
-
 	glutPostRedisplay();
 }
 
@@ -298,7 +290,7 @@ void menu(int value)
 	switch (value)
 	{
 	case MENU_RESET:
-		cam(0, 0, -100);
+		cam(0, 0, 0);
 		break;
 
 	case MENU_EXIT:
@@ -361,7 +353,6 @@ void menu(int value)
 		flymode = false;
 		break;
 	}
-	glutPostRedisplay();
 }
 
 inline void createMenu(void(*func)(int value))
@@ -403,12 +394,13 @@ inline void createMenu(void(*func)(int value))
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-void onReshape(int w, int h)
+void onReshape(int w_, int h_)
 {
-	glViewport(0, 0, w, h);
+	w = w_, h = h_;
+	glViewport(0, 0, w_, h_);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(fov, (double)w / h, nearPlane, farPlane);
+	gluPerspective(fov, (double)w_ / h_, nearPlane, farPlane);
 }
 
 void onKeyDown(unsigned char key, int mx, int my)
@@ -458,8 +450,6 @@ void onKeyDown(unsigned char key, int mx, int my)
 		std::cout << "Not a key\n";
 		break;
 	}
-
-	glutPostRedisplay();
 }
 
 void onKeyUp(unsigned char key, int mx, int my)
@@ -492,14 +482,12 @@ void onKeyUp(unsigned char key, int mx, int my)
 		keyState[5] = false;
 		break;
 	}
-
-	glutPostRedisplay();
 }
 
 void onSpecialKeyUp(int key, int x, int y)
 {
 	switch (key)
-	{ // Zkopírovat pohyb nahoru a dolu
+	{
 	case GLUT_KEY_PAGE_UP:
 		keyState[4] = false;
 		break;
@@ -507,7 +495,6 @@ void onSpecialKeyUp(int key, int x, int y)
 		keyState[5] = false;
 		break;
 	}
-	glutPostRedisplay();
 }
 
 void onSpecialKeyDown(int key, int x, int y)
@@ -521,7 +508,6 @@ void onSpecialKeyDown(int key, int x, int y)
 		keyState[5] = true;
 		break;
 	}
-	glutPostRedisplay();
 }
 
 void movement()
@@ -611,7 +597,6 @@ void movement()
 			if (cam.bob <= 0) cam.down = true;
 		}
 	}
-
 	glutPostRedisplay();
 }
 
@@ -698,6 +683,7 @@ void init()
 	glLightfv(GL_LIGHT2, GL_AMBIENT, flashlightAmbient);
 	glLightfv(GL_LIGHT2, GL_DIFFUSE, flashlightDiffuse);
 	glLightfv(GL_LIGHT2, GL_SPECULAR, flashlightSpecular);
+	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, flashlightDirection);
 	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 15);
 
 	// Quadric
@@ -765,6 +751,7 @@ void init()
 	setTexture("textury/2k_sun.tga", &textureType[sun], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[sun]);
 
+	// Nastavení slunce
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
@@ -778,6 +765,7 @@ void init()
 	setTexture("textury/2k_moon.tga", &textureType[moon], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[moon]);
 
+	// Nastavení měsíce
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
@@ -791,6 +779,7 @@ void init()
 	setTexture("textury/bark.tga", &textureType[bark], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[bark]);
 
+	// Nastavení kůry
 	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
@@ -804,10 +793,11 @@ void init()
 	setTexture("textury/leaves.tga", &textureType[leaves], false);
 	glBindTexture(GL_TEXTURE_2D, textureType[leaves]);
 
-	glMaterialf(GL_FRONT, GL_SHININESS, woodShininess);
-	glMaterialfv(GL_FRONT, GL_AMBIENT, woodAmbient);
-	glMaterialfv(GL_FRONT, GL_DIFFUSE, woodDiffuse);
-	glMaterialfv(GL_FRONT, GL_SPECULAR, woodSpecular);
+	// Nastavení listí
+	glMaterialf(GL_FRONT, GL_SHININESS, leavesShininess);
+	glMaterialfv(GL_FRONT, GL_AMBIENT, leavesAmbient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, leavesDiffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, leavesSpecular);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -920,12 +910,8 @@ void drawGrassPatch(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 {
 	glPushMatrix();
 
-	GLboolean lighting;
 	GLboolean cullface;
-
-	glGetBooleanv(GL_LIGHTING, &lighting);
 	glGetBooleanv(GL_CULL_FACE, &cullface);
-
 	if (cullface) glDisable(GL_CULL_FACE);
 
 	glBindTexture(GL_TEXTURE_2D, textureType[ground]);
@@ -1192,39 +1178,6 @@ void drawWall(GLfloat x, GLfloat y, GLfloat z, GLfloat width, GLfloat height, GL
 	glPopMatrix();
 }
 
-void drawWindow(GLfloat x, GLfloat y, GLfloat z)
-{
-	glPushMatrix();
-
-	glDepthMask(GL_FALSE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	// Pruhledná stěna
-	glDisable(GL_LIGHTING);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_TEXTURE_2D);
-
-	// nutno vypnout texturu pokud ji nechci
-	glColor4f(0.0f, 1.0f, 1.0f, 0.8f);
-	glBegin(GL_QUADS);
-	{
-		glVertex3f(-x, -y, z);
-		glVertex3f(-x, y, z);
-		glVertex3f(x, y, z);
-		glVertex3f(x, -y, z);
-	}
-	glEnd();
-
-	if (textures) glEnable(GL_TEXTURE_2D);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_LIGHTING);
-	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE);
-
-	glPopMatrix();
-}
-
 void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 {
 	glPushMatrix();
@@ -1275,6 +1228,7 @@ void drawObjSign(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 		glEnd();
 	}
 	
+	if (lighting) glEnable(GL_LIGHTING);
 	if (cullface) glEnable(GL_CULL_FACE);
 
 	glPopMatrix();
@@ -1285,15 +1239,13 @@ void drawObjBench(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 	glPushMatrix();
 
 	GLboolean cullface;
-	GLboolean lighting;
 	glGetBooleanv(GL_CULL_FACE, &cullface);
-	glGetBooleanv(GL_LIGHTING, &lighting);
 
-	glBindTexture(GL_TEXTURE_2D, textureType[wood]);
-	
 	if (cullface) glDisable(GL_CULL_FACE);
 	if (textures) glDisable(GL_TEXTURE_2D);
 
+	glBindTexture(GL_TEXTURE_2D, textureType[wood]);
+	
 	glTranslatef(x, y, z);
 	glRotatef(rotation, 0, 1, 0);
 
@@ -1326,7 +1278,6 @@ void drawObjBench(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
 		glEnd();
 	}
 
-	if (lighting) glEnable(GL_LIGHTING);
 	if (textures) glEnable(GL_TEXTURE_2D);
 	if (cullface) glEnable(GL_CULL_FACE);
 
@@ -1431,26 +1382,33 @@ bool throwTorus()
 void flashlight()
 {
 	glPushMatrix();
-
-	glRotatef(1 * (8 - cam.sensitivity), 0, 1, 0);
 	GLfloat pos[] = { cam.x, cam.y, cam.z };
 	glLightfv(GL_LIGHT2, GL_POSITION, pos);
-
 	glPopMatrix();
 }
 
 void informations()
 {
+	glPushMatrix();
+
 	glColor3f(0, 0, 0);
-	glRasterPos3f(0, 30, 0);
-	std::string text = "x" + std::to_string(cam.x) + " y" + std::to_string(cam.y) + " z" + std::to_string(cam.z);
-	std::string text2 = "sin(y_new) " + std::to_string(cam.y_new);
-	for (int i = 0; i < text.length(); i++) 
+	std::string text = "x: " + std::to_string(std::ceil(cam.x * 100) / 100) + " sklon: " + std::to_string(std::ceil(cam.y_new * 100) / 100);
+	std::string text2 = "y: " + std::to_string(std::ceil(cam.y * 100) / 100) + " svitilna: " + (cam.flashlight ? "true" : "false");
+	std::string text3 = "z: " + std::to_string(std::ceil(cam.z * 100) / 100) + " letani: " + (flymode ? "true" : "false");
+
+	glRasterPos3f(0, 70, -100);
+	for (int i = 0; i < text.length(); i++)
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text[i]);
 
-	glRasterPos3f(0, 22, 0);
+	glRasterPos3f(0, 66, -100);
 	for (int i = 0; i < text2.length(); i++)
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text2[i]);
+
+	glRasterPos3f(0, 62, -100);
+	for (int i = 0; i < text3.length(); i++)
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text3[i]);
+
+	glPopMatrix();
 }
 
 void onRedraw()
@@ -1473,6 +1431,7 @@ void onRedraw()
 	glRotatef(cam.y_new <= -90 ? cam.y_new = -89.9f : cam.y_new > 90 ? cam.y_new = 89.9f : cam.y_new, 1, 0, 0);
 	glRotatef(cam.x_new, 0, 1, 0);
 	glTranslatef(cam.x, cam.y, cam.z);
+	
 
 	// !!VLASTNÍ!!
 	drawGround(TEXTURE_HEIGHT / 2, TEXTURE_WIDTH / 2);
@@ -1496,17 +1455,17 @@ void onRedraw()
 
 	if (loadedBench) drawObjBench(85, -11, -65, 90);
 	if (loadedBench) drawObjBench(63, -11, -85, 180);
-	
+
 	if (loadedTree) drawObjTree(56, -15, 74, 0, 1);
 	if (loadedTree) drawObjTree(17, -15, 82, 180, 1.4f);
 	if (loadedTree) drawObjTree(0, -15, 52, 90, 1);
 	if (loadedTree) drawObjTree(85, -15, 25, 135, 1.5f);
 
 	if (loadedSign) drawObjSign(-25, -4, -15, 90);
-	
+
 	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
-	
-	if(cam.flashlight) flashlight();
+
+	if (cam.flashlight) flashlight();
 
 	movement();
 
