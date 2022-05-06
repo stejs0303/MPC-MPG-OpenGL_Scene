@@ -12,33 +12,31 @@
 *
 * Název:				Park
 *
-* Vypracované úlohy:	Modelování objektů -							3b
-*						Animace - CHECK									1b
-*						Osvětlení - CHECK								1b
-*						Volný pohyb v horizontální rovině - CHECK		1b
-*						Menu - CHECK									2b
-*						Výpis textu - tak napůl							2b
-*						Ruční svítilna - CHECK							2b
-*						Blender model -	CHECK							2b
-*						Létání - CHECK									2b
-*						Stoupání, klesání - CHECK						1b
-*						Hod předmětu - CHECK							2b
-*						Simulace kroku - CHECK							2b
-*						Tlačítka -										2b
-*						Průhlednost - CHECK								1b
-*						Projekční paprsek -								1b
-*						Neprůchozí objekt - CHECK						2b
-*						Texturování - CHECK								2b
-*						Bézierovy pláty -								2b
+* Vypracované úlohy:	Modelování objektů - 2/5						3b
+*						Animace - Ano									1b
+*						Osvětlení - Ano									1b
+*						Volný pohyb v horizontální rovině - Ano			1b
+*						Menu - Ano										2b
+*						Výpis textu - Ano								2b
+*						Ruční svítilna - Ano							2b
+*						Blender model -	Ano								2b
+*						Létání - Ano									2b
+*						Stoupání, klesání - Ano							1b
+*						Hod předmětu - Ano								2b
+*						Simulace kroku - Ano							2b
+*						Tlačítka - Ne									2b
+*						Průhlednost - Ano								1b
+*						Projekční paprsek -	Ne							1b
+*						Neprůchozí objekt - Ano							2b
+*						Texturování - Ano								2b
+*						Bézierovy pláty - Ne							2b
 *
-* Očekáváný počet bodù:	24
+* Očekáváný počet bodů:	24
 *
 * Ovládací klávesy:		w -- pohyb dopředu	q / PageUp -- pohyb nahoru
 *						a -- pohyb doleva	e / PageDown -- pohyb dolu 
 *						s -- pohyb dozadu	f -- svítilna
 *						d -- pohyb doprava	t -- hodit objekt
-* 
-* Vlastní nápady:		...
 *
 * Konfigurace:			Windows SDK 10.0.22000.0, Visual studio v143, C++14, Debug x64, bez ladění
 ****************************************************************************************************/
@@ -65,10 +63,16 @@
 #define TEXTURE_HEIGHT 400
 #define TEXTURE_WIDTH 400
 
-#define BOBSPEED 230
+#define BOBSPEED 80
 
 #define PI 3.14159265359
 #define PIOVER180 0.017453292519943f
+
+struct Tripplet
+{
+	int x, z, rotation;
+	Tripplet(int x, int z, int rotation) : x(x), z(z), rotation(rotation) {}
+};
 
 struct Player
 {
@@ -155,7 +159,6 @@ struct Collider
 };
 
 // nastaveni projekce
-float w, h;
 float fov = 60.0;
 float nearPlane = 0.1f;
 float farPlane = 600;
@@ -193,16 +196,29 @@ enum Textures
 	bark = 5,
 	leaves = 6
 };
-
 GLuint textureType[9];
-
-// pole pro potvrzení zmáčknuté klávesy (w,a,s,d,q,e)
-bool keyState[6];
 
 // detekce kolize
 std::vector<Collider>* colliderArr = new std::vector<Collider>();
 
 GLUquadric* quadric = gluNewQuadric();
+
+std::vector<Tripplet> grassArr;
+
+enum Actions
+{
+	thrownTorus = 0,
+	forward = 1,
+	backward = 2,
+	left = 3,
+	right = 4,
+	up = 5,
+	down = 6,
+	rotation = 7,
+	light = 8,
+	flight = 9,
+};
+bool actions[10];
 
 // Načítání blender renderů
 bool loadedSign = false;
@@ -232,6 +248,8 @@ GLfloat flashlightAmbient[] = { .3f, .3f, .2f, 1 };
 GLfloat flashlightDiffuse[] = { .7f, .7f, .7f, 1.0f };
 GLfloat flashlightSpecular[] = { 1, 1, 1, 1.0f };
 GLfloat flashlightDirection[] = {0, 0, -1};
+
+
 // Position a Direction vypocitat
 
 // materiál
@@ -255,7 +273,6 @@ GLfloat leavesDiffuse[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 GLfloat leavesSpecular[] = { .05f, .05f, .05f, 1.0f };
 GLfloat leavesShininess = 10;
 
-
 bool collision(float x, float y, float z)
 {
 	for (size_t i = 0; i < colliderArr->size(); i++)
@@ -271,7 +288,7 @@ void onTimer(int value)
 	if (animations)
 	{
 		if (suon.positionAngle >= 360) suon.positionAngle = 0;
-		suon.positionAngle += .08;
+		suon.positionAngle += .1f;
 
 		glutTimerFunc(15, onTimer, 10);
 	}
@@ -346,11 +363,11 @@ void menu(int value)
 		break;
 	
 	case FLYMODE_ON:
-		flymode = true;
+		actions[Actions::flight] = flymode = true;
 		break;
 	
 	case FLYMODE_OFF:
-		flymode = false;
+		actions[Actions::flight] = flymode = false;
 		break;
 	}
 }
@@ -396,7 +413,6 @@ inline void createMenu(void(*func)(int value))
 
 void onReshape(int w_, int h_)
 {
-	w = w_, h = h_;
 	glViewport(0, 0, w_, h_);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -410,31 +426,32 @@ void onKeyDown(unsigned char key, int mx, int my)
 	switch (key)
 	{
 	case 'w':
-		keyState[0] = true;
+		actions[Actions::forward] = true;
 		break;
 
 	case 'a':
-		keyState[1] = true;
+		actions[Actions::left] = true;
 		break;
 
 	case 's':
-		keyState[2] = true;
+		actions[Actions::backward] = true;
 		break;
 
 	case 'd':
-		keyState[3] = true;
+		actions[Actions::right] = true;
 		break;
 
 	case 'q':
-		keyState[4] = true;
+		actions[Actions::up] = true;
 		break;
 
 	case 'e':
-		keyState[5] = true;
+		actions[Actions::down] = true;
 		break;
 
 	case 'f':
 		cam.flashlight = cam.flashlight ? false : true;
+		actions[Actions::light] = cam.flashlight;
 		if (cam.flashlight) glEnable(GL_LIGHT2);
 		else glDisable(GL_LIGHT2);
 		break;
@@ -443,11 +460,8 @@ void onKeyDown(unsigned char key, int mx, int my)
 		torus(-1 * cam.x, -1 * cam.y, -1 * cam.z, cam.viewDirXZ);
 		torus.distance = 0;
 		torus.thrown = true;
+		actions[Actions::thrownTorus] = true;
 		glutTimerFunc(15, onTimer, 1);
-		break;
-
-	default:
-		std::cout << "Not a key\n";
 		break;
 	}
 }
@@ -459,27 +473,40 @@ void onKeyUp(unsigned char key, int mx, int my)
 	switch (key)
 	{
 	case 'w':
-		keyState[0] = false;
+		actions[Actions::forward] = false;
 		break;
 
 	case 'a':
-		keyState[1] = false;
+		actions[Actions::left] = false;
 		break;
 
 	case 's':
-		keyState[2] = false;
+		actions[Actions::backward] = false;
 		break;
 
 	case 'd':
-		keyState[3] = false;
+		actions[Actions::right] = false;
 		break;
 
 	case 'q':
-		keyState[4] = false;
+		actions[Actions::up] = false;
 		break;
 
 	case 'e':
-		keyState[5] = false;
+		actions[Actions::down] = false;
+		break;
+	}
+}
+
+void onSpecialKeyDown(int key, int x, int y)
+{
+	switch (key)
+	{ 
+	case GLUT_KEY_PAGE_UP:
+		actions[Actions::up] = true;
+		break;
+	case GLUT_KEY_PAGE_DOWN:
+		actions[Actions::down] = true;
 		break;
 	}
 }
@@ -489,23 +516,10 @@ void onSpecialKeyUp(int key, int x, int y)
 	switch (key)
 	{
 	case GLUT_KEY_PAGE_UP:
-		keyState[4] = false;
+		actions[Actions::up] = false;
 		break;
 	case GLUT_KEY_PAGE_DOWN:
-		keyState[5] = false;
-		break;
-	}
-}
-
-void onSpecialKeyDown(int key, int x, int y)
-{
-	switch (key)
-	{ // Zkopírovat pohyb nahoru a dolu
-	case GLUT_KEY_PAGE_UP:
-		keyState[4] = true;
-		break;
-	case GLUT_KEY_PAGE_DOWN:
-		keyState[5] = true;
+		actions[Actions::down] = false;
 		break;
 	}
 }
@@ -514,11 +528,11 @@ void movement()
 {
 	float tempx, tempy, tempz;
 
-	if (keyState[0])	// w
+	if (actions[Actions::forward])
 	{
-		tempx = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
-		tempy = flymode ? .1f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
-		tempz = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempx = .3f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempy = flymode ? .3f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
+		tempz = .3f / cam.movementSpeed * cos(cam.viewDirXZ);
 
 		if (collision(cam.x - tempx, cam.y + tempy, cam.z + tempz))
 		{
@@ -527,10 +541,10 @@ void movement()
 			cam.z += tempz;
 		}
 	}
-	if (keyState[1])	// a
+	if (actions[Actions::left])
 	{
-		tempx = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
-		tempz = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempx = .3f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempz = .3f / cam.movementSpeed * sin(cam.viewDirXZ);
 
 		if (collision(cam.x + tempx, cam.y, cam.z + tempz))
 		{
@@ -538,11 +552,11 @@ void movement()
 			cam.z += tempz;
 		}
 	}
-	if (keyState[2])	// s
+	if (actions[Actions::backward])
 	{
-		tempx = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
-		tempy = flymode ? .1f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
-		tempz = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempx = .3f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempy = flymode ? .3f / cam.movementSpeed * sin(cam.viewDirXY) : 0;
+		tempz = .3f / cam.movementSpeed * cos(cam.viewDirXZ);
 
 
 		if (collision(cam.x + tempx, cam.y - tempy, cam.z - tempz))
@@ -552,10 +566,10 @@ void movement()
 			cam.z -= tempz;
 		}
 	}
-	if (keyState[3])	// d
+	if (actions[Actions::right])
 	{
-		tempx = .1f / cam.movementSpeed * cos(cam.viewDirXZ);
-		tempz = .1f / cam.movementSpeed * sin(cam.viewDirXZ);
+		tempx = .3f / cam.movementSpeed * cos(cam.viewDirXZ);
+		tempz = .3f / cam.movementSpeed * sin(cam.viewDirXZ);
 
 		if (collision(cam.x - tempx, cam.y, cam.z - tempz))
 		{
@@ -563,24 +577,26 @@ void movement()
 			cam.z -= tempz;
 		}
 	}
-	if (keyState[4])	// q
+	if (actions[Actions::up])
 	{
-		tempy = .1f / cam.movementSpeed;
+		tempy = .3f / cam.movementSpeed;
 		if (collision(cam.x, cam.y - tempy, cam.z))
 		{
 			cam.y -= tempy;
 		}
 	}
-	if (keyState[5])	// e
+	if (actions[Actions::down])
 	{
-		tempy = .1f / cam.movementSpeed;
+		tempy = .3f / cam.movementSpeed;
 		if (collision(cam.x, cam.y + tempy, cam.z))
 		{
 			cam.y += cam.y + tempy < 0 ? tempy : 0;
 		}
 	}
 
-	if ((keyState[0] || keyState[1] || keyState[2] || keyState[3] || cam.bob > 0) && cam.y > -1.0f)
+	if ((actions[Actions::forward] || actions[Actions::left] || 
+		actions[Actions::backward] || actions[Actions::right] || 
+		cam.bob > 0) && cam.y > -1.0f)
 	{
 		if (cam.down)
 		{
@@ -610,12 +626,14 @@ void onClick(int button, int state, int x, int y)
 		{
 			cam.changeViewDir = true;
 			cam.x_temp = (float)x, cam.y_temp = (float)y;
+			actions[Actions::rotation] = true;
 		}
 		else
 		{
 			cam.changeViewDir = false;
 			cam.x_old = cam.x_new;
 			cam.y_old = cam.y_new;
+			actions[Actions::rotation] = false;
 		}
 	}
 }
@@ -685,13 +703,14 @@ void init()
 	glLightfv(GL_LIGHT2, GL_SPECULAR, flashlightSpecular);
 	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, flashlightDirection);
 	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, 15);
+	GLfloat flashlightPosition[] = { 0, 0, 0 };
+	glLightfv(GL_LIGHT2, GL_POSITION, flashlightPosition);
 
 	// Quadric
 	gluQuadricDrawStyle(quadric, GLU_FILL);
 	gluQuadricOrientation(quadric, GLU_OUTSIDE);
 	gluQuadricNormals(quadric, GLU_SMOOTH);
 	gluQuadricTexture(quadric, GLU_TRUE);
-
 
 	loadedSign = sign.LoadFile("obj/cedule.obj");
 	loadedBench = bench.LoadFile("obj/lavice.obj");
@@ -813,7 +832,7 @@ void init()
 	// zed 2
 	colliderArr->push_back(Collider(-0.2f, 15, -100, 100, 30, 5));
 	// cedule
-	colliderArr->push_back(Collider(-26, 6, -21, 2, 30, 12));
+	colliderArr->push_back(Collider(-35, -4, -31, 2, 30, 12));
 	// lavice 1
 	colliderArr->push_back(Collider(79, 2, -75, 10, 17, 22));
 	// lavice 2
@@ -826,6 +845,16 @@ void init()
 
 	srand((unsigned int)std::time(0));
 	rand_ = rand() % 3;
+
+	int tmp;
+	for (size_t i = 0; i < 180; i += 10 + rand() % 7)
+	{
+		for (size_t j = 0; j < 180; j += 10 + rand() % 7)
+		{
+			tmp = rand() % 4;
+			grassArr.push_back(Tripplet(87 - i, 87 - j, tmp == 0 ? 0 : tmp == 1 ? 90 : tmp == 2 ? 180 : 270));
+		}	
+	}
 }
 
 void drawGround(GLfloat x, GLfloat z)
@@ -859,50 +888,6 @@ void drawGround(GLfloat x, GLfloat z)
 	glEnd();
 
 	if (!textures) glEnable(GL_LIGHTING);
-	glPopMatrix();
-}
-
-void drawSmallStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
-{
-	glPushMatrix();
-
-	GLboolean lighting;
-	glGetBooleanv(GL_LIGHTING, &lighting);
-	if (lighting) glDisable(GL_LIGHTING);
-
-	glTranslatef(x, y, z);
-	glRotatef(rotation, 0, 1, 0);
-
-	glBegin(GL_QUADS);
-
-
-
-	glEnd();
-
-	if (lighting) glEnable(GL_LIGHTING);
-
-	glPopMatrix();
-}
-
-void drawBigStone(GLfloat x, GLfloat y, GLfloat z, GLfloat rotation)
-{
-	glPushMatrix();
-
-	GLboolean lighting;
-	glGetBooleanv(GL_LIGHTING, &lighting);
-	if (lighting) glDisable(GL_LIGHTING);
-
-	glTranslatef(x, y, z);
-	glRotatef(rotation, 0, 1, 0);
-
-	glBegin(GL_QUADS);
-
-
-
-	glEnd();
-
-	if (lighting) glEnable(GL_LIGHTING);
-
 	glPopMatrix();
 }
 
@@ -1379,35 +1364,61 @@ bool throwTorus()
 	return true;
 }
 
-void flashlight()
-{
-	glPushMatrix();
-	GLfloat pos[] = { cam.x, cam.y, cam.z };
-	glLightfv(GL_LIGHT2, GL_POSITION, pos);
-	glPopMatrix();
-}
-
 void informations()
 {
+	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
 
-	glColor3f(0, 0, 0);
-	std::string text = "x: " + std::to_string(std::ceil(cam.x * 100) / 100) + " sklon: " + std::to_string(std::ceil(cam.y_new * 100) / 100);
-	std::string text2 = "y: " + std::to_string(std::ceil(cam.y * 100) / 100) + " svitilna: " + (cam.flashlight ? "true" : "false");
-	std::string text3 = "z: " + std::to_string(std::ceil(cam.z * 100) / 100) + " letani: " + (flymode ? "true" : "false");
+	GLboolean depthtest;
+	GLboolean lighting;
+	GLboolean textures;
 
-	glRasterPos3f(0, 70, -100);
-	for (int i = 0; i < text.length(); i++)
-		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text[i]);
+	glGetBooleanv(GL_DEPTH_TEST, &depthtest);
+	glGetBooleanv(GL_LIGHTING, &lighting);
+	glGetBooleanv(GL_TEXTURE_2D, &textures);
 
-	glRasterPos3f(0, 66, -100);
-	for (int i = 0; i < text2.length(); i++)
-		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text2[i]);
+	if (depthtest) glDisable(GL_DEPTH_TEST);
+	if (lighting) glDisable(GL_LIGHTING);
+	if (textures) glDisable(GL_TEXTURE_2D);
 
-	glRasterPos3f(0, 62, -100);
-	for (int i = 0; i < text3.length(); i++)
-		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, text3[i]);
+	glColor3f(.1f, .1f, .1f);
+	std::string x = "x: " + std::to_string(std::ceil(cam.x * 100) / 100);
+	std::string y = "y: " + std::to_string(-std::ceil(cam.y * 100) / 100);
+	std::string z = "z: " + std::to_string(std::ceil(cam.z * 100) / 100);
+	std::string sklon = "sklon: " + std::to_string(-std::ceil(cam.y_new * 100) / 100);
 
+	glRasterPos2f(-.99f, .95f); for (size_t i = 0; i < x.length(); i++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, x[i]);
+	glRasterPos2f(-.99f, .88f); for (size_t i = 0; i < y.length(); i++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, y[i]);
+	glRasterPos2f(-.99f, .81f); for (size_t i = 0; i < z.length(); i++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, z[i]);
+	glRasterPos2f(-.99f, .74f); for (size_t i = 0; i < sklon.length(); i++) glutBitmapCharacter(GLUT_BITMAP_9_BY_15, sklon[i]);
+
+	float height = -.95f;
+	std::string allActions[] = {"Hod objektem", "Chuze vpred", "Chuze vzad", 
+		"Ukrok vlevo", "Ukrok vpravo", "Stoupani", "Klesani", "Rotace", "Svitilna", "Letani"};
+
+	glColor3f(1, 1, 1);
+	for (size_t i = 0; i < 10; i++)
+	{
+		if (actions[i])
+		{
+			glRasterPos2f(.8f, height); 
+			for (size_t j = 0; j < allActions[i].length(); j++) 
+				glutBitmapCharacter(GLUT_BITMAP_9_BY_15, allActions[i][j]);
+			height += .07f;
+		}
+	}
+
+	if (lighting) glEnable(GL_LIGHTING);
+	if (depthtest) glEnable(GL_DEPTH_TEST);
+	if (textures) glEnable(GL_TEXTURE_2D);
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix(); 
+	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 }
 
@@ -1441,17 +1452,10 @@ void onRedraw()
 	drawWall(95, 15, -99.8f, 5, 30, 50);
 	drawWall(-0.2f, 15, -100, 100, 30, 5);
 
-	drawGrassPatch(87, -15, -87, 0);
-	drawGrassPatch(87, -15, -70, 90);
-	drawGrassPatch(87, -15, -60, 0);
-	drawGrassPatch(87, -15, -52, 90);
-	drawGrassPatch(70, -15, -87, 90);
-	drawGrassPatch(60, -15, -87, 0);
-	drawGrassPatch(52, -15, -87, 180);
-
-	drawGrassPatch(60, -15, -52, 0);
-	drawGrassPatch(55, -15, -47, 90);
-	drawGrassPatch(51, -15, -60, 0);
+	for (Tripplet& patch : grassArr)
+	{
+		drawGrassPatch(patch.x, -15, patch.z, patch.rotation);
+	}
 
 	if (loadedBench) drawObjBench(85, -11, -65, 90);
 	if (loadedBench) drawObjBench(63, -11, -85, 180);
@@ -1461,11 +1465,10 @@ void onRedraw()
 	if (loadedTree) drawObjTree(0, -15, 52, 90, 1);
 	if (loadedTree) drawObjTree(85, -15, 25, 135, 1.5f);
 
-	if (loadedSign) drawObjSign(-25, -4, -15, 90);
+	if (loadedSign) drawObjSign(-35, -4, -25, 90);
 
-	if (torus.thrown) (torus.distance++ < farPlane * 8) ? throwTorus() : torus.thrown = false;
-
-	if (cam.flashlight) flashlight();
+	if (torus.thrown) (torus.distance++ < farPlane * 2) ? 
+		throwTorus() : actions[Actions::thrownTorus] = torus.thrown = false;
 
 	movement();
 
