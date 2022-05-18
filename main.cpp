@@ -716,8 +716,6 @@ void init()
 	loadedBench = bench.LoadFile("obj/lavice.obj");
 	loadedTree = tree.LoadFile("obj/strom.obj");
 
-	// !!Přidat textury!!
-
 	// Dynamicky vygenerovaná textura
 	initTexture();
 	glGenTextures(1, &textureType[ground]);
