@@ -3,20 +3,20 @@ OpenGL, GLU, GLUT, pain&amp;suffering
 
 # Vypracované úlohy:	
 * 3b  Modelování objektů - 2/5
-*	1b  Animace - CHECK
-*	1b  Osvětlení - CHECK - přidat červánky?
-*	1b  Volný pohyb v horizontální rovině - CHECK
-*	2b  Menu - CHECK
-*	2b  Výpis textu - 
-*	2b  Ruční svítilna - špatně
-*	2b  Blender model - CHECK
-*	2b  Létání - CHECK 
-*	1b  Stoupání, klesání - CHECK
-*	2b  Hod předmětu - CHECK
-*	2b  Simulace kroku - CHECK
+*	1b  Animace - HOTOVO
+*	1b  Osvětlení - HOTOVO
+*	1b  Volný pohyb v horizontální rovině - HOTOVO
+*	2b  Menu - HOTOVO
+*	2b  Výpis textu - HOTOVO
+*	2b  Ruční svítilna - HOTOVO
+*	2b  Blender model - HOTOVO
+*	2b  Létání - HOTOVO
+*	1b  Stoupání, klesání - HOTOVO
+*	2b  Hod předmětu - HOTOVO
+*	2b  Simulace kroku - HOTOVO
 *	2b  Tlačítka -
-*	1b  Prùhlednost - CHECK
-*	1b  Projekční paprsek - Nemám tucha so chce
-*	2b  Neprůchozí objekt - CHECK
-*	2b  Texturování - CHECK
+*	1b  Prùhlednost - HOTOVO
+*	1b  Projekční paprsek - 
+*	2b  Neprůchozí objekt - HOTOVO
+*	2b  Texturování - HOTOVO
 *	2b  Bézierovy pláty - 
